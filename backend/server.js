@@ -96,8 +96,8 @@ async function analyzeResumeWithAI(resumeText, questions = {}) {
     console.log('====================');
     
         if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here' || process.env.OPENAI_API_KEY.length < 20) {
-      console.log('❌ OpenAI API ключ не настроен или неверный');
-      throw new Error('OpenAI API ключ не настроен. Проверьте переменную окружения OPENAI_API_KEY');
+      console.log('❌ OpenAI API ключ не настроен или неверный, используем локальный анализ');
+      return performLocalAnalysis(resumeText, questions);
     }
     
     console.log('✅ OpenAI API ключ найден, используем API');
@@ -227,13 +227,14 @@ ${resumeText}${additionalInfo}
   } catch (error) {
     console.error('Ошибка OpenAI API:', error);
     
-    // Пробрасываем ошибку дальше
-    throw error;
+    // Возвращаем локальный анализ при ошибке API
+    console.log('🔄 Используем локальный анализ из-за ошибки API');
+    return performLocalAnalysis(resumeText, questions);
   }
 }
 
 // Локальный анализ резюме (без OpenAI)
-function performLocalAnalysis(resumeText) {
+function performLocalAnalysis(resumeText, questions = {}) {
   const text = resumeText.toLowerCase();
   
   let level = 'Junior';
@@ -243,19 +244,36 @@ function performLocalAnalysis(resumeText) {
   const strongPoints = [];
   const weakPoints = [];
   
-  // Определение уровня по новым критериям
-  if (text.includes('8 лет') || text.includes('более 8') || text.includes('expert') || text.includes('руководитель') || text.includes('team lead') || text.includes('директор')) {
-    level = 'Lead/Expert';
-    score += 25;
-  } else if (text.includes('5 лет') || text.includes('более 5') || text.includes('senior') || text.includes('архитектор') || text.includes('проектирование') || text.includes('ведущий')) {
-    level = 'Senior';
-    score += 20;
-  } else if (text.includes('3 года') || text.includes('4 года') || text.includes('middle') || text.includes('опыт 3') || text.includes('опыт 4')) {
-    level = 'Middle';
-    score += 15;
-  } else if (text.includes('1 год') || text.includes('2 года') || text.includes('junior') || text.includes('опыт 1') || text.includes('опыт 2')) {
-    level = 'Junior';
-    score += 10;
+  // Определение уровня по новым критериям (с учетом вопросов)
+  if (questions.experienceYears) {
+    if (questions.experienceYears === '8+') {
+      level = 'Lead/Expert';
+      score += 25;
+    } else if (questions.experienceYears === '5-8') {
+      level = 'Senior';
+      score += 20;
+    } else if (questions.experienceYears === '3-5' || questions.experienceYears === '2-3') {
+      level = 'Middle';
+      score += 15;
+    } else {
+      level = 'Junior';
+      score += 10;
+    }
+  } else {
+    // Определение по тексту резюме
+    if (text.includes('8 лет') || text.includes('более 8') || text.includes('expert') || text.includes('руководитель') || text.includes('team lead') || text.includes('директор')) {
+      level = 'Lead/Expert';
+      score += 25;
+    } else if (text.includes('5 лет') || text.includes('более 5') || text.includes('senior') || text.includes('архитектор') || text.includes('проектирование') || text.includes('ведущий')) {
+      level = 'Senior';
+      score += 20;
+    } else if (text.includes('3 года') || text.includes('4 года') || text.includes('middle') || text.includes('опыт 3') || text.includes('опыт 4')) {
+      level = 'Middle';
+      score += 15;
+    } else if (text.includes('1 год') || text.includes('2 года') || text.includes('junior') || text.includes('опыт 1') || text.includes('опыт 2')) {
+      level = 'Junior';
+      score += 10;
+    }
   }
   
   // Поиск навыков (универсальные)
@@ -311,14 +329,40 @@ function performLocalAnalysis(resumeText) {
     weakPoints.push('Отсутствуют конкретные достижения с цифрами');
   }
   
-  // Анализ языков
-  if (text.includes('английский') || text.includes('english')) {
+  // Анализ языков (с учетом вопросов)
+  if (questions.englishLevel) {
+    strongPoints.push(`Указан уровень английского языка: ${questions.englishLevel}`);
+    if (questions.englishLevel === 'C1' || questions.englishLevel === 'C2') {
+      score += 15;
+    } else if (questions.englishLevel === 'B2') {
+      score += 10;
+    } else if (questions.englishLevel === 'B1') {
+      score += 5;
+    }
+  } else if (text.includes('английский') || text.includes('english')) {
     strongPoints.push('Указан уровень английского языка');
   } else {
     weakPoints.push('Не указан уровень английского языка');
   }
   
-  // Рекомендации
+  // Рекомендации (с учетом вопросов)
+  if (questions.desiredPosition) {
+    strongPoints.push(`Указана желаемая должность: ${questions.desiredPosition}`);
+    score += 5;
+  }
+  
+  if (questions.desiredSalary) {
+    strongPoints.push(`Указана желаемая зарплата: ${questions.desiredSalary} руб/мес`);
+    score += 5;
+  }
+  
+  if (questions.relocation) {
+    const relocationText = questions.relocation === 'yes' ? 'готов к переезду' : 
+                          questions.relocation === 'no' ? 'не готов к переезду' : 
+                          'рассматривает предложения по переезду';
+    strongPoints.push(`Готовность к переезду: ${relocationText}`);
+  }
+  
   if (text.length < 200) {
     recommendations.push('Добавьте больше деталей о вашем опыте работы');
   }
