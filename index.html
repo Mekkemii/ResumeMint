@@ -194,26 +194,6 @@
             color: #6b7280;
             margin-top: 30px;
         }
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-        }
-        .tab.active {
-            border-bottom-color: #3b82f6;
-            color: #3b82f6;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
     </style>
 </head>
 <body>
@@ -231,33 +211,25 @@
         <div class="form-container">
             <h2>Анализ резюме</h2>
             
-            <div class="tabs">
-                <div class="tab active" onclick="switchTab('text')">Текст</div>
-                <div class="tab" onclick="switchTab('file')">Файл</div>
+            <div class="form-group">
+                <label for="resumeText">Вставьте текст вашего резюме:</label>
+                <textarea id="resumeText" placeholder="Вставьте текст вашего резюме здесь..."></textarea>
             </div>
 
-            <div id="text-tab" class="tab-content active">
-                <div class="form-group">
-                    <label for="resumeText">Вставьте текст вашего резюме:</label>
-                    <textarea id="resumeText" placeholder="Вставьте текст вашего резюме здесь..."></textarea>
+            <div class="form-group">
+                <label>Или загрузите файл резюме:</label>
+                <div class="file-upload" onclick="document.getElementById('fileInput').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <p>Перетащите файл сюда или нажмите для выбора</p>
+                    <p style="font-size: 0.9em; color: #6b7280;">Поддерживаемые форматы: .docx, .doc, .pdf, .txt</p>
                 </div>
-            </div>
-
-            <div id="file-tab" class="tab-content">
-                <div class="form-group">
-                    <label>Загрузите файл резюме:</label>
-                    <div class="file-upload" onclick="document.getElementById('fileInput').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <p>Перетащите файл сюда или нажмите для выбора</p>
-                        <p style="font-size: 0.9em; color: #6b7280;">Поддерживаемые форматы: .docx, .doc, .pdf, .txt</p>
-                    </div>
-                    <input type="file" id="fileInput" accept=".docx,.doc,.pdf,.txt" style="display: none;" onchange="handleFileSelect(event)">
-                    <div id="fileInfo" class="file-info"></div>
-                </div>
+                <input type="file" id="fileInput" accept=".docx,.doc,.pdf,.txt" style="display: none;" onchange="handleFileSelect(event)">
+                <div id="fileInfo" class="file-info"></div>
             </div>
 
             <div class="button-group">
                 <button onclick="analyzeResume()" id="analyzeBtn" class="btn btn-blue">Анализировать резюме</button>
                 <button onclick="loadSample()" class="btn btn-gray">Загрузить пример</button>
+                <button onclick="clearFile()" id="clearFileBtn" class="btn btn-gray" style="display: none;">Удалить файл</button>
             </div>
 
             <div id="loading" class="loading">
@@ -298,21 +270,12 @@
     <script>
         let selectedFile = null;
 
-        function switchTab(tabName) {
-            // Убираем активный класс со всех табов
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            // Добавляем активный класс к выбранному табу
-            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
-            document.getElementById(`${tabName}-tab`).classList.add('active');
-        }
-
         function handleFileSelect(event) {
             const file = event.target.files[0];
             if (file) {
                 selectedFile = file;
                 showFileInfo(file);
+                document.getElementById('clearFileBtn').style.display = 'block';
             }
         }
 
@@ -323,6 +286,7 @@
                 selectedFile = file;
                 document.getElementById('fileInput').files = event.dataTransfer.files;
                 showFileInfo(file);
+                document.getElementById('clearFileBtn').style.display = 'block';
             }
             document.querySelector('.file-upload').classList.remove('dragover');
         }
@@ -476,6 +440,14 @@
 
         function loadSample() {
             document.getElementById('resumeText').value = 'Иван Иванов\nFrontend Developer\n\nОпыт работы: 2 года\nНавыки: React, TypeScript, JavaScript\nОбразование: Высшее техническое';
+            clearFile();
+        }
+
+        function clearFile() {
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('clearFileBtn').style.display = 'none';
+            selectedFile = null;
         }
     </script>
 </body>
