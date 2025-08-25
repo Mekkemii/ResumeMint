@@ -89,8 +89,3 @@ jspm_packages/
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
-# Backend files (we only deploy frontend to Vercel)
-backend/
-docs/
-*.md
-!README.md
