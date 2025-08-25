@@ -85,19 +85,22 @@ async function extractTextFromFile(file) {
 }
 
 // Функция AI анализа с использованием OpenAI
-async function analyzeResumeWithAI(resumeText) {
+async function analyzeResumeWithAI(resumeText, questions = {}) {
   try {
     // Проверяем, есть ли API ключ
-    console.log('API Key check:', {
-      hasKey: !!process.env.OPENAI_API_KEY,
-      keyLength: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0,
-      keyStart: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 10) + '...' : 'none'
-    });
+    console.log('=== API KEY DEBUG ===');
+    console.log('API Key exists:', !!process.env.OPENAI_API_KEY);
+    console.log('API Key length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
+    console.log('API Key start:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 15) + '...' : 'none');
+    console.log('API Key full:', process.env.OPENAI_API_KEY);
+    console.log('====================');
     
     if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here' || process.env.OPENAI_API_KEY.length < 20) {
-      console.log('OpenAI API ключ не настроен или неверный, используем локальный анализ');
+      console.log('❌ OpenAI API ключ не настроен или неверный, используем локальный анализ');
       return performLocalAnalysis(resumeText);
     }
+    
+    console.log('✅ OpenAI API ключ найден, используем API');
 
     // Принудительно используем OpenAI API для тестирования
     console.log('Принудительно используем OpenAI API...');
@@ -170,11 +173,22 @@ async function analyzeResumeWithAI(resumeText) {
   "weakPoints": ["недочеты"]
 }`;
 
+    // Формируем дополнительную информацию из вопросов
+    let additionalInfo = '';
+    if (questions && Object.keys(questions).length > 0) {
+      additionalInfo = '\n\nДополнительная информация от кандидата:\n';
+      if (questions.desiredPosition) additionalInfo += `- Желаемая должность: ${questions.desiredPosition}\n`;
+      if (questions.experienceYears) additionalInfo += `- Опыт работы: ${questions.experienceYears}\n`;
+      if (questions.englishLevel) additionalInfo += `- Уровень английского: ${questions.englishLevel}\n`;
+      if (questions.desiredSalary) additionalInfo += `- Желаемая зарплата: ${questions.desiredSalary} руб/мес\n`;
+      if (questions.relocation) additionalInfo += `- Готовность к переезду: ${questions.relocation}\n`;
+    }
+
     const userPrompt = `Проанализируй следующее резюме:
 
-${resumeText}
+${resumeText}${additionalInfo}
 
-Дай детальный анализ в указанном формате и JSON с оценкой.`;
+Дай детальный анализ в указанном формате и JSON с оценкой. Учитывай дополнительную информацию при определении грейда и рекомендаций.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
@@ -504,9 +518,10 @@ app.post('/api/resume/upload', upload.single('resume'), async (req, res) => {
 
 app.post('/api/resume/analyze-text', async (req, res) => {
   try {
-    const { resumeText } = req.body;
+    const { resumeText, questions } = req.body;
     
     console.log('Получен запрос на анализ текста, длина:', resumeText ? resumeText.length : 0);
+    console.log('Данные вопросов:', questions);
     
     if (!resumeText || resumeText.trim().length < 10) {
       console.log('Текст слишком короткий:', resumeText);
@@ -518,8 +533,8 @@ app.post('/api/resume/analyze-text', async (req, res) => {
     
     console.log('Анализ текстового резюме, длина:', resumeText.trim().length);
     
-    // Анализируем резюме
-    const analysisResult = await analyzeResumeWithAI(resumeText.trim());
+    // Анализируем резюме с учетом вопросов
+    const analysisResult = await analyzeResumeWithAI(resumeText.trim(), questions);
     
     res.json({
       success: true,

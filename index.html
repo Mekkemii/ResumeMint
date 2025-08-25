@@ -216,6 +216,35 @@
         .analysis-content strong {
             color: #1e293b;
         }
+        
+        .question-item {
+            margin-bottom: 15px;
+        }
+        
+        .question-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .question-item input,
+        .question-item select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .question-item input:focus,
+        .question-item select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
         .footer {
             text-align: center;
             color: #6b7280;
@@ -256,7 +285,54 @@
                 </div>
             </div>
 
+            <!-- Уточняющие вопросы -->
+            <div class="form-group" id="questionsSection" style="display: none;">
+                <h3>Уточняющие вопросы для лучшего анализа:</h3>
+                <div class="question-item">
+                    <label>Желаемая должность:</label>
+                    <input type="text" id="desiredPosition" placeholder="Например: Frontend Developer, Data Scientist">
+                </div>
+                <div class="question-item">
+                    <label>Опыт работы (лет):</label>
+                    <select id="experienceYears">
+                        <option value="">Выберите опыт</option>
+                        <option value="0-1">0-1 год</option>
+                        <option value="1-2">1-2 года</option>
+                        <option value="2-3">2-3 года</option>
+                        <option value="3-5">3-5 лет</option>
+                        <option value="5-8">5-8 лет</option>
+                        <option value="8+">8+ лет</option>
+                    </select>
+                </div>
+                <div class="question-item">
+                    <label>Уровень английского:</label>
+                    <select id="englishLevel">
+                        <option value="">Выберите уровень</option>
+                        <option value="A1">A1 - Начальный</option>
+                        <option value="A2">A2 - Элементарный</option>
+                        <option value="B1">B1 - Средний</option>
+                        <option value="B2">B2 - Выше среднего</option>
+                        <option value="C1">C1 - Продвинутый</option>
+                        <option value="C2">C2 - В совершенстве</option>
+                    </select>
+                </div>
+                <div class="question-item">
+                    <label>Желаемая зарплата (руб/мес):</label>
+                    <input type="number" id="desiredSalary" placeholder="Например: 150000">
+                </div>
+                <div class="question-item">
+                    <label>Готовность к переезду:</label>
+                    <select id="relocation">
+                        <option value="">Выберите</option>
+                        <option value="yes">Да, готов</option>
+                        <option value="no">Нет, не готов</option>
+                        <option value="maybe">Рассмотрю предложения</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="button-group">
+                <button onclick="showQuestions()" id="questionsBtn" class="btn btn-green">Заполнить уточняющие вопросы</button>
                 <button onclick="analyzeResume()" id="analyzeBtn" class="btn btn-blue">Анализировать резюме</button>
                 <button onclick="loadSample()" class="btn btn-gray">Загрузить пример</button>
                 <button onclick="clearFile()" id="clearFileBtn" class="btn btn-gray" style="display: none;">Удалить файл</button>
@@ -381,12 +457,16 @@
                     });
                 } else {
                     // Анализ текста
+                    const questionsData = getQuestionsData();
                     response = await fetch('/api/resume/analyze-text', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ resumeText })
+                        body: JSON.stringify({ 
+                            resumeText,
+                            questions: questionsData
+                        })
                     });
                 }
 
@@ -478,6 +558,31 @@
             clearFile();
         }
 
+        function showQuestions() {
+            const questionsSection = document.getElementById('questionsSection');
+            const questionsBtn = document.getElementById('questionsBtn');
+            
+            if (questionsSection.style.display === 'none') {
+                questionsSection.style.display = 'block';
+                questionsBtn.textContent = 'Скрыть вопросы';
+                questionsBtn.className = 'btn btn-gray';
+            } else {
+                questionsSection.style.display = 'none';
+                questionsBtn.textContent = 'Заполнить уточняющие вопросы';
+                questionsBtn.className = 'btn btn-green';
+            }
+        }
+        
+        function getQuestionsData() {
+            return {
+                desiredPosition: document.getElementById('desiredPosition').value,
+                experienceYears: document.getElementById('experienceYears').value,
+                englishLevel: document.getElementById('englishLevel').value,
+                desiredSalary: document.getElementById('desiredSalary').value,
+                relocation: document.getElementById('relocation').value
+            };
+        }
+        
         function clearFile() {
             document.getElementById('fileInput').value = '';
             document.getElementById('fileInfo').style.display = 'none';
