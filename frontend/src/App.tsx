@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { resumeAPI } from './services/api';
 
 // Vercel cache bust - 2024-12-19 15:30
 function App() {
@@ -18,39 +17,37 @@ function App() {
     setError(null);
 
     try {
-      const response = await resumeAPI.analyzeText(resumeText);
-      
-      if (response.success) {
-        setResult(response.data);
-      } else {
-        setError(response.error?.message || 'Ошибка анализа');
+      // Простая клиентская логика для тестирования
+      const text = resumeText.toLowerCase();
+      let level = 'Junior';
+      let score = 70;
+
+      if (text.includes('senior') || text.includes('lead')) {
+        level = 'Senior/Lead';
+      } else if (text.includes('middle') || text.includes('опыт 3')) {
+        level = 'Middle';
       }
+
+      if (text.includes('опыт работы')) score += 10;
+      if (text.includes('образование')) score += 10;
+      if (text.includes('навыки')) score += 10;
+
+      setResult({
+        level,
+        score,
+        skills: text.includes('react') ? ['React'] : [],
+        recommendations: ['Добавьте больше деталей', 'Используйте ключевые слова']
+      });
     } catch (err: any) {
       console.error('Analysis error:', err);
-      setError(err.message || 'Ошибка соединения с сервером');
+      setError(err.message || 'Ошибка анализа');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadSample = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await resumeAPI.getSample();
-      
-      if (response.success) {
-        setResumeText(response.data.sampleText || 'Иван Иванов\nFrontend Developer\n\nОпыт работы: 2 года\nНавыки: React, TypeScript, JavaScript\nОбразование: Высшее техническое');
-      } else {
-        setResumeText('Иван Иванов\nFrontend Developer\n\nОпыт работы: 2 года\nНавыки: React, TypeScript, JavaScript\nОбразование: Высшее техническое');
-      }
-    } catch (err: any) {
-      console.error('Sample loading error:', err);
-      setResumeText('Иван Иванов\nFrontend Developer\n\nОпыт работы: 2 года\nНавыки: React, TypeScript, JavaScript\nОбразование: Высшее техническое');
-    } finally {
-      setLoading(false);
-    }
+  const loadSample = () => {
+    setResumeText('Иван Иванов\nFrontend Developer\n\nОпыт работы: 2 года\nНавыки: React, TypeScript, JavaScript\nОбразование: Высшее техническое');
   };
 
   return (
@@ -259,19 +256,19 @@ function App() {
                 <div>
                   <strong style={{ color: '#374151' }}>Уровень специалиста:</strong>
                   <p style={{ color: '#3b82f6', fontWeight: '500', margin: '0.25rem 0' }}>
-                    {result.grade || result.level || 'Не определен'}
+                    {result.level}
                   </p>
                 </div>
                 <div>
                   <strong style={{ color: '#374151' }}>ATS совместимость:</strong>
                   <p style={{ color: '#3b82f6', fontWeight: '500', margin: '0.25rem 0' }}>
-                    {result.atsScore || result.score || 'Не определен'}%
+                    {result.score}%
                   </p>
                 </div>
                 <div>
                   <strong style={{ color: '#374151' }}>Найденные навыки:</strong>
                   <ul style={{ color: '#10b981', margin: '0.25rem 0', paddingLeft: '1.5rem' }}>
-                    {(result.skills || []).map((skill: string, index: number) => (
+                    {result.skills.map((skill: string, index: number) => (
                       <li key={index}>{skill}</li>
                     ))}
                   </ul>
@@ -279,7 +276,7 @@ function App() {
                 <div>
                   <strong style={{ color: '#374151' }}>Рекомендации:</strong>
                   <ul style={{ color: '#6b7280', margin: '0.25rem 0', paddingLeft: '1.5rem' }}>
-                    {(result.recommendations || []).map((rec: string, index: number) => (
+                    {result.recommendations.map((rec: string, index: number) => (
                       <li key={index}>{rec}</li>
                     ))}
                   </ul>
