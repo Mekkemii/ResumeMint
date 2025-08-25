@@ -88,10 +88,21 @@ async function extractTextFromFile(file) {
 async function analyzeResumeWithAI(resumeText) {
   try {
     // Проверяем, есть ли API ключ
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
-      console.log('OpenAI API ключ не настроен, используем локальный анализ');
+    console.log('API Key check:', {
+      hasKey: !!process.env.OPENAI_API_KEY,
+      keyLength: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0,
+      keyStart: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 10) + '...' : 'none'
+    });
+    
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here' || process.env.OPENAI_API_KEY.length < 20) {
+      console.log('OpenAI API ключ не настроен или неверный, используем локальный анализ');
       return performLocalAnalysis(resumeText);
     }
+
+    // Принудительно используем OpenAI API для тестирования
+    console.log('Принудительно используем OpenAI API...');
+
+    console.log('Используем OpenAI API для анализа...');
 
     const systemPrompt = `Ты — эксперт по резюме, ATS-системам, карьерному развитию и системе IT-грейдов.
 

@@ -108,6 +108,33 @@
             background-color: #f8fafc;
             border-radius: 5px;
             display: none;
+            position: relative;
+        }
+        
+        .file-info-content {
+            margin-right: 30px;
+        }
+        
+        .file-remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        
+        .file-remove-btn:hover {
+            background: #dc2626;
         }
         .button-group {
             display: flex;
@@ -223,7 +250,10 @@
                     <p style="font-size: 0.9em; color: #6b7280;">Поддерживаемые форматы: .docx, .doc, .pdf, .txt</p>
                 </div>
                 <input type="file" id="fileInput" accept=".docx,.doc,.pdf,.txt" style="display: none;" onchange="handleFileSelect(event)">
-                <div id="fileInfo" class="file-info"></div>
+                <div id="fileInfo" class="file-info">
+                    <div class="file-info-content"></div>
+                    <button type="button" class="file-remove-btn" onclick="clearFile()" style="display: none;">✕</button>
+                </div>
             </div>
 
             <div class="button-group">
@@ -303,8 +333,13 @@
 
         function showFileInfo(file) {
             const fileInfo = document.getElementById('fileInfo');
+            const fileInfoContent = fileInfo.querySelector('.file-info-content');
+            const removeBtn = fileInfo.querySelector('.file-remove-btn');
+            
             fileInfo.style.display = 'block';
-            fileInfo.innerHTML = `
+            removeBtn.style.display = 'flex';
+            
+            fileInfoContent.innerHTML = `
                 <strong>Выбран файл:</strong> ${file.name}<br>
                 <strong>Размер:</strong> ${(file.size / 1024).toFixed(1)} KB<br>
                 <strong>Тип:</strong> ${file.type || 'Неизвестно'}
@@ -447,6 +482,7 @@
             document.getElementById('fileInput').value = '';
             document.getElementById('fileInfo').style.display = 'none';
             document.getElementById('clearFileBtn').style.display = 'none';
+            document.querySelector('.file-remove-btn').style.display = 'none';
             selectedFile = null;
         }
     </script>
