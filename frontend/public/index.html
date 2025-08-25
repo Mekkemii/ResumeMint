@@ -1,26 +1,221 @@
 <!DOCTYPE html>
 <html lang="ru">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#3b82f6" />
-    <meta
-      name="description"
-      content="ResumeMint.ru - AI ассистент для анализа резюме и ATS с карьерным консультированием"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <title>ResumeMint.ru - AI Анализ Резюме</title>
-  </head>
-  <body>
-    <noscript>Для работы приложения необходимо включить JavaScript.</noscript>
-    <div id="root"></div>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResumeMint.ru - AI ассистент анализа резюме</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9fafb;
+            color: #111827;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #6b7280;
+        }
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-green {
+            background-color: #10b981;
+            color: white;
+        }
+        .btn-orange {
+            background-color: #f59e0b;
+            color: white;
+        }
+        .btn-blue {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-gray {
+            background-color: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            min-height: 150px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .results {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #e2e8f0;
+            display: none;
+        }
+        .results h3 {
+            margin-bottom: 15px;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .footer {
+            text-align: center;
+            color: #6b7280;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ResumeMint.ru</h1>
+            <p>AI ассистент для анализа резюме</p>
+        </div>
+
+        <div class="nav">
+            <a href="https://t.me/resumemint_support" target="_blank" class="btn btn-green">О нас</a>
+            <a href="https://www.tinkoff.ru/rm/ivanov.ivan123/1234567890" target="_blank" class="btn btn-orange">Донат</a>
+        </div>
+
+        <div class="form-container">
+            <h2>Анализ резюме</h2>
+            
+            <div class="form-group">
+                <label for="resumeText">Вставьте текст вашего резюме:</label>
+                <textarea id="resumeText" placeholder="Вставьте текст вашего резюме здесь..."></textarea>
+            </div>
+
+            <div class="button-group">
+                <button onclick="analyzeResume()" class="btn btn-blue">Анализировать резюме</button>
+                <button onclick="loadSample()" class="btn btn-gray">Загрузить пример</button>
+            </div>
+        </div>
+
+        <div id="results" class="results">
+            <h3>Результаты анализа</h3>
+            <div class="results-grid">
+                <div>
+                    <strong>Уровень специалиста:</strong>
+                    <p id="level" style="color: #3b82f6; margin: 5px 0;"></p>
+                </div>
+                <div>
+                    <strong>ATS совместимость:</strong>
+                    <p id="score" style="color: #3b82f6; margin: 5px 0;"></p>
+                </div>
+                <div>
+                    <strong>Найденные навыки:</strong>
+                    <ul id="skills" style="color: #10b981; margin: 5px 0; padding-left: 20px;"></ul>
+                </div>
+                <div>
+                    <strong>Рекомендации:</strong>
+                    <ul id="recommendations" style="color: #6b7280; margin: 5px 0; padding-left: 20px;"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>ResumeMint.ru - AI-ассистент для анализа резюме и вакансий. Мы помогаем IT-специалистам создавать эффективные резюме.</p>
+        </div>
+    </div>
+
+    <script>
+        function analyzeResume() {
+            const resumeText = document.getElementById('resumeText').value.trim();
+            
+            if (!resumeText) {
+                alert('Введите текст резюме!');
+                return;
+            }
+
+            // Простая логика анализа
+            const text = resumeText.toLowerCase();
+            let level = 'Junior';
+            let score = 70;
+
+            if (text.includes('senior') || text.includes('lead')) {
+                level = 'Senior/Lead';
+            } else if (text.includes('middle') || text.includes('опыт 3')) {
+                level = 'Middle';
+            }
+
+            if (text.includes('опыт работы')) score += 10;
+            if (text.includes('образование')) score += 10;
+            if (text.includes('навыки')) score += 10;
+
+            const skills = text.includes('react') ? ['React'] : [];
+            const recommendations = ['Добавьте больше деталей', 'Используйте ключевые слова'];
+
+            // Отображаем результаты
+            document.getElementById('level').textContent = level;
+            document.getElementById('score').textContent = score + '%';
+            
+            const skillsList = document.getElementById('skills');
+            skillsList.innerHTML = '';
+            skills.forEach(skill => {
+                const li = document.createElement('li');
+                li.textContent = skill;
+                skillsList.appendChild(li);
+            });
+
+            const recommendationsList = document.getElementById('recommendations');
+            recommendationsList.innerHTML = '';
+            recommendations.forEach(rec => {
+                const li = document.createElement('li');
+                li.textContent = rec;
+                recommendationsList.appendChild(li);
+            });
+
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function loadSample() {
+            document.getElementById('resumeText').value = 'Иван Иванов\nFrontend Developer\n\nОпыт работы: 2 года\nНавыки: React, TypeScript, JavaScript\nОбразование: Высшее техническое';
+        }
+    </script>
+</body>
 </html>
