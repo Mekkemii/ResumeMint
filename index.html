@@ -156,6 +156,39 @@
             grid-template-columns: 1fr 1fr;
             gap: 15px;
         }
+        
+        .detailed-analysis {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .detailed-analysis h2 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .detailed-analysis h3 {
+            color: #374151;
+            margin: 20px 0 10px 0;
+            font-size: 1.2em;
+        }
+        
+        .analysis-content {
+            line-height: 1.6;
+            color: #374151;
+        }
+        
+        .analysis-content p {
+            margin-bottom: 10px;
+        }
+        
+        .analysis-content strong {
+            color: #1e293b;
+        }
         .footer {
             text-align: center;
             color: #6b7280;
@@ -381,6 +414,7 @@
         }
 
         function displayResults(data) {
+            // Обновляем краткую информацию
             document.getElementById('level').textContent = data.grade || data.level || 'Не определен';
             document.getElementById('score').textContent = (data.atsScore || data.score || 0) + '%';
             
@@ -401,6 +435,35 @@
                 li.textContent = rec;
                 recommendationsList.appendChild(li);
             });
+
+            // Добавляем детальный анализ
+            const resultsDiv = document.getElementById('results');
+            
+            // Создаем или обновляем секцию детального анализа
+            let detailedSection = document.getElementById('detailed-analysis');
+            if (!detailedSection) {
+                detailedSection = document.createElement('div');
+                detailedSection.id = 'detailed-analysis';
+                detailedSection.className = 'detailed-analysis';
+                resultsDiv.appendChild(detailedSection);
+            }
+            
+            // Форматируем детальный анализ
+            if (data.detailedAnalysis) {
+                const formattedAnalysis = data.detailedAnalysis
+                    .replace(/# (.*?)\n/g, '<h2>$1</h2>')
+                    .replace(/## (.*?)\n/g, '<h3>$1</h3>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/\n/g, '<br>');
+                
+                detailedSection.innerHTML = `
+                    <h2>Детальный анализ резюме</h2>
+                    <div class="analysis-content">
+                        ${formattedAnalysis}
+                    </div>
+                `;
+            }
 
             document.getElementById('results').style.display = 'block';
         }
