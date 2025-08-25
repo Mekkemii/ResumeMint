@@ -31,7 +31,6 @@
     "eject": "react-scripts eject",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
-    "vercel-build": "react-scripts build",
     "vercel-build": "CI=false react-scripts build"
   },
   "eslintConfig": {
