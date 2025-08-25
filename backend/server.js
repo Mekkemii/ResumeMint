@@ -506,14 +506,17 @@ app.post('/api/resume/analyze-text', async (req, res) => {
   try {
     const { resumeText } = req.body;
     
-    if (!resumeText || resumeText.trim().length < 50) {
+    console.log('Получен запрос на анализ текста, длина:', resumeText ? resumeText.length : 0);
+    
+    if (!resumeText || resumeText.trim().length < 10) {
+      console.log('Текст слишком короткий:', resumeText);
       return res.status(400).json({
         success: false,
-        error: { message: 'Текст резюме слишком короткий. Минимум 50 символов.' }
+        error: { message: 'Текст резюме слишком короткий. Минимум 10 символов.' }
       });
     }
     
-    console.log('Анализ текстового резюме');
+    console.log('Анализ текстового резюме, длина:', resumeText.trim().length);
     
     // Анализируем резюме
     const analysisResult = await analyzeResumeWithAI(resumeText.trim());
