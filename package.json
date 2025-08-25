@@ -6,7 +6,8 @@
   "scripts": {
     "build": "cd frontend && npm install && npm run build",
     "dev": "cd frontend && npm start",
-    "start": "cd frontend && npm start"
+    "start": "cd frontend && npm start",
+    "vercel-build": "npm --prefix frontend install && npm --prefix frontend run build"
   },
   "engines": {
     "node": ">=16.0.0",

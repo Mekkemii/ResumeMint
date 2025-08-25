@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 
+// Vercel cache bust - 2024-12-19 15:30
 function App() {
   const [resumeText, setResumeText] = useState('');
   const [result, setResult] = useState<any>(null);
@@ -60,7 +61,7 @@ function App() {
           }}>
             ResumeMint.ru
           </h1>
-          <div style={{ display: 'flex', gap: '2rem' }}>
+          <div style={{ display: 'flex', gap: '1rem' }}>
             <button style={{
               padding: '0.5rem 1rem',
               backgroundColor: '#3b82f6',
@@ -71,14 +72,30 @@ function App() {
             }}>
               Анализ резюме
             </button>
-            <button style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#10b981',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.5rem',
-              cursor: 'pointer'
-            }}>
+            <button 
+              onClick={() => window.open('https://t.me/resumemint_support', '_blank')}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                cursor: 'pointer'
+              }}
+            >
+              О нас
+            </button>
+            <button 
+              onClick={() => window.open('https://www.tinkoff.ru/rm/ivanov.ivan123/1234567890', '_blank')}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#f59e0b',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                cursor: 'pointer'
+              }}
+            >
               Донат
             </button>
           </div>
