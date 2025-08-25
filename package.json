@@ -1,16 +1,17 @@
 {
   "name": "resume-mint",
   "version": "1.0.0",
-  "description": "AI assistant for resume and ATS analysis with career guidance",
-  "private": true,
+  "description": "ResumeMint.ru - AI ассистент для анализа резюме",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build",
-    "dev": "cd frontend && npm start",
-    "start": "cd frontend && npm start",
-    "vercel-build": "npm --prefix frontend install && npm --prefix frontend run build"
+    "build": "echo 'Build completed'",
+    "start": "node backend/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1"
   },
   "engines": {
-    "node": ">=16.0.0",
-    "npm": ">=8.0.0"
+    "node": ">=18.0.0"
   }
 }
