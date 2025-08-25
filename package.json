@@ -1,0 +1,19 @@
+{
+  "name": "resume-mint",
+  "version": "1.0.0",
+  "description": "AI assistant for resume and ATS analysis with career guidance",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "dev": "cd frontend && npm start",
+    "start": "cd frontend && npm start"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
