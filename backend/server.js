@@ -15,6 +15,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Инициализация OpenAI
+console.log('=== INITIALIZATION DEBUG ===');
+console.log('OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
+console.log('OPENAI_API_KEY length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
+console.log('OPENAI_API_KEY start:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 10) + '...' : 'none');
+console.log('===========================');
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'your-api-key-here'
 });
@@ -93,12 +99,15 @@ async function analyzeResumeWithAI(resumeText, questions = {}) {
     console.log('API Key length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
     console.log('API Key start:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 15) + '...' : 'none');
     console.log('API Key full:', process.env.OPENAI_API_KEY);
+    console.log('All env vars:', Object.keys(process.env).filter(key => key.includes('OPENAI')));
     console.log('====================');
     
         if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here' || process.env.OPENAI_API_KEY.length < 20) {
       console.log('❌ OpenAI API ключ не настроен или неверный');
       console.log('Попробуем принудительно использовать API...');
       // Принудительно пытаемся использовать API даже без ключа для тестирования
+    } else {
+      console.log('✅ OpenAI API ключ найден, используем API');
     }
     
     console.log('✅ OpenAI API ключ найден, используем API');
@@ -106,6 +115,22 @@ async function analyzeResumeWithAI(resumeText, questions = {}) {
     console.log('Используем OpenAI API для анализа...');
     
     console.log('🚀 Отправляем запрос к OpenAI API...');
+    
+    // Принудительно пытаемся использовать API
+    try {
+      console.log('🔧 Принудительный тест API...');
+      const testCompletion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "user", content: "Тест API - ответь 'OK'" }
+        ],
+        max_tokens: 5
+      });
+      console.log('✅ API работает! Ответ:', testCompletion.choices[0].message.content);
+    } catch (testError) {
+      console.error('❌ API не работает:', testError.message);
+      console.error('❌ Ошибка детали:', testError);
+    }
 
     const systemPrompt = `Ты — эксперт по резюме, ATS-системам и карьерному развитию.
 
