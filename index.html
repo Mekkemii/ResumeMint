@@ -59,6 +59,10 @@
             color: #374151;
             border: 1px solid #d1d5db;
         }
+        .btn:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
         .form-container {
             background-color: white;
             padding: 20px;
@@ -83,10 +87,59 @@
             resize: vertical;
             box-sizing: border-box;
         }
+        .file-upload {
+            border: 2px dashed #d1d5db;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .file-upload:hover {
+            border-color: #3b82f6;
+        }
+        .file-upload.dragover {
+            border-color: #3b82f6;
+            background-color: #f0f9ff;
+        }
+        .file-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8fafc;
+            border-radius: 5px;
+            display: none;
+        }
         .button-group {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
         }
         .results {
             background-color: #f8fafc;
@@ -108,6 +161,26 @@
             color: #6b7280;
             margin-top: 30px;
         }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            border-bottom-color: #3b82f6;
+            color: #3b82f6;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -125,15 +198,41 @@
         <div class="form-container">
             <h2>Анализ резюме</h2>
             
-            <div class="form-group">
-                <label for="resumeText">Вставьте текст вашего резюме:</label>
-                <textarea id="resumeText" placeholder="Вставьте текст вашего резюме здесь..."></textarea>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('text')">Текст</div>
+                <div class="tab" onclick="switchTab('file')">Файл</div>
+            </div>
+
+            <div id="text-tab" class="tab-content active">
+                <div class="form-group">
+                    <label for="resumeText">Вставьте текст вашего резюме:</label>
+                    <textarea id="resumeText" placeholder="Вставьте текст вашего резюме здесь..."></textarea>
+                </div>
+            </div>
+
+            <div id="file-tab" class="tab-content">
+                <div class="form-group">
+                    <label>Загрузите файл резюме:</label>
+                    <div class="file-upload" onclick="document.getElementById('fileInput').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <p>Перетащите файл сюда или нажмите для выбора</p>
+                        <p style="font-size: 0.9em; color: #6b7280;">Поддерживаемые форматы: .docx, .doc, .pdf, .txt</p>
+                    </div>
+                    <input type="file" id="fileInput" accept=".docx,.doc,.pdf,.txt" style="display: none;" onchange="handleFileSelect(event)">
+                    <div id="fileInfo" class="file-info"></div>
+                </div>
             </div>
 
             <div class="button-group">
-                <button onclick="analyzeResume()" class="btn btn-blue">Анализировать резюме</button>
+                <button onclick="analyzeResume()" id="analyzeBtn" class="btn btn-blue">Анализировать резюме</button>
                 <button onclick="loadSample()" class="btn btn-gray">Загрузить пример</button>
             </div>
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>AI анализирует ваше резюме...</p>
+            </div>
+
+            <div id="error" class="error"></div>
         </div>
 
         <div id="results" class="results">
@@ -164,38 +263,130 @@
     </div>
 
     <script>
-        function analyzeResume() {
-            const resumeText = document.getElementById('resumeText').value.trim();
+        let selectedFile = null;
+
+        function switchTab(tabName) {
+            // Убираем активный класс со всех табов
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            if (!resumeText) {
-                alert('Введите текст резюме!');
+            // Добавляем активный класс к выбранному табу
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                showFileInfo(file);
+            }
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+            if (file) {
+                selectedFile = file;
+                document.getElementById('fileInput').files = event.dataTransfer.files;
+                showFileInfo(file);
+            }
+            document.querySelector('.file-upload').classList.remove('dragover');
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            document.querySelector('.file-upload').classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            document.querySelector('.file-upload').classList.remove('dragover');
+        }
+
+        function showFileInfo(file) {
+            const fileInfo = document.getElementById('fileInfo');
+            fileInfo.style.display = 'block';
+            fileInfo.innerHTML = `
+                <strong>Выбран файл:</strong> ${file.name}<br>
+                <strong>Размер:</strong> ${(file.size / 1024).toFixed(1)} KB<br>
+                <strong>Тип:</strong> ${file.type || 'Неизвестно'}
+            `;
+        }
+
+        async function analyzeResume() {
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const results = document.getElementById('results');
+
+            // Скрываем предыдущие результаты и ошибки
+            error.style.display = 'none';
+            results.style.display = 'none';
+
+            // Проверяем, что есть данные для анализа
+            const resumeText = document.getElementById('resumeText').value.trim();
+            if (!resumeText && !selectedFile) {
+                showError('Введите текст резюме или загрузите файл!');
                 return;
             }
 
-            // Простая логика анализа
-            const text = resumeText.toLowerCase();
-            let level = 'Junior';
-            let score = 70;
+            // Показываем загрузку
+            analyzeBtn.disabled = true;
+            loading.style.display = 'block';
 
-            if (text.includes('senior') || text.includes('lead')) {
-                level = 'Senior/Lead';
-            } else if (text.includes('middle') || text.includes('опыт 3')) {
-                level = 'Middle';
+            try {
+                let response;
+                
+                if (selectedFile) {
+                    // Анализ файла
+                    const formData = new FormData();
+                    formData.append('resume', selectedFile);
+                    
+                    response = await fetch('/api/resume/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    // Анализ текста
+                    response = await fetch('/api/resume/analyze-text', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ resumeText })
+                    });
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data.data);
+                } else {
+                    throw new Error(data.error?.message || 'Ошибка анализа');
+                }
+
+            } catch (err) {
+                console.error('Analysis error:', err);
+                showError(err.message || 'Ошибка соединения с сервером');
+            } finally {
+                // Скрываем загрузку
+                analyzeBtn.disabled = false;
+                loading.style.display = 'none';
             }
+        }
 
-            if (text.includes('опыт работы')) score += 10;
-            if (text.includes('образование')) score += 10;
-            if (text.includes('навыки')) score += 10;
-
-            const skills = text.includes('react') ? ['React'] : [];
-            const recommendations = ['Добавьте больше деталей', 'Используйте ключевые слова'];
-
-            // Отображаем результаты
-            document.getElementById('level').textContent = level;
-            document.getElementById('score').textContent = score + '%';
+        function displayResults(data) {
+            document.getElementById('level').textContent = data.grade || data.level || 'Не определен';
+            document.getElementById('score').textContent = (data.atsScore || data.score || 0) + '%';
             
             const skillsList = document.getElementById('skills');
             skillsList.innerHTML = '';
+            const skills = data.skills || [];
             skills.forEach(skill => {
                 const li = document.createElement('li');
                 li.textContent = skill;
@@ -204,6 +395,7 @@
 
             const recommendationsList = document.getElementById('recommendations');
             recommendationsList.innerHTML = '';
+            const recommendations = data.recommendations || [];
             recommendations.forEach(rec => {
                 const li = document.createElement('li');
                 li.textContent = rec;
@@ -211,6 +403,12 @@
             });
 
             document.getElementById('results').style.display = 'block';
+        }
+
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.style.display = 'block';
         }
 
         function loadSample() {
