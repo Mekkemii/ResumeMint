@@ -3,7 +3,7 @@ import { ApiResponse, ApiError } from '../types';
 
 // Создание экземпляра axios с базовой конфигурацией
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  baseURL: process.env.REACT_APP_API_URL || '/api',
   timeout: 30000, // 30 секунд
   headers: {
     'Content-Type': 'application/json',
