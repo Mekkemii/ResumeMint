@@ -96,13 +96,16 @@ async function analyzeResumeWithAI(resumeText, questions = {}) {
     console.log('====================');
     
         if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here' || process.env.OPENAI_API_KEY.length < 20) {
-      console.log('❌ OpenAI API ключ не настроен или неверный, используем локальный анализ');
-      return performLocalAnalysis(resumeText, questions);
+      console.log('❌ OpenAI API ключ не настроен или неверный');
+      console.log('Попробуем принудительно использовать API...');
+      // Принудительно пытаемся использовать API даже без ключа для тестирования
     }
     
     console.log('✅ OpenAI API ключ найден, используем API');
 
     console.log('Используем OpenAI API для анализа...');
+    
+    console.log('🚀 Отправляем запрос к OpenAI API...');
 
     const systemPrompt = `Ты — эксперт по резюме, ATS-системам и карьерному развитию.
 
@@ -226,6 +229,23 @@ ${resumeText}${additionalInfo}
     
   } catch (error) {
     console.error('Ошибка OpenAI API:', error);
+    
+    // Принудительно пытаемся использовать API даже при ошибке
+    console.log('🔄 Пытаемся принудительно использовать API...');
+    
+    try {
+      // Простой тестовый запрос к API
+      const testCompletion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "user", content: "Привет! Это тестовый запрос." }
+        ],
+        max_tokens: 10
+      });
+      console.log('✅ API работает! Тестовый запрос успешен');
+    } catch (testError) {
+      console.error('❌ API не работает:', testError.message);
+    }
     
     // Возвращаем локальный анализ при ошибке API
     console.log('🔄 Используем локальный анализ из-за ошибки API');
@@ -385,6 +405,13 @@ function performLocalAnalysis(resumeText, questions = {}) {
   if (text.includes('навыки')) score += 10;
   if (text.includes('проект')) score += 5;
   if (text.includes('достижения')) score += 10;
+  
+  // Для очень коротких текстов снижаем оценку
+  if (text.length < 50) {
+    score = Math.max(score - 30, 10); // Минимум 10%
+  } else if (text.length < 100) {
+    score = Math.max(score - 20, 20); // Минимум 20%
+  }
   
   score = Math.min(score, 100);
   
