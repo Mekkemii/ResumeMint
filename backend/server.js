@@ -197,7 +197,7 @@ ${resumeText}${additionalInfo}
 Дай детальный анализ в указанном формате и JSON с оценкой. Учитывай дополнительную информацию при определении грейда и рекомендаций.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+              model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }

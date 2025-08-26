@@ -89,7 +89,7 @@ ${resumeText}
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: prompt }
@@ -149,7 +149,7 @@ ${vacancyText}
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: prompt }
@@ -216,7 +216,7 @@ async function compareResumeWithVacancy(resumeData, vacancyData) {
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: prompt }
@@ -275,7 +275,7 @@ ${originalResume}
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: prompt }
@@ -331,7 +331,7 @@ async function generateCoverLetter(resumeData, vacancyData) {
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: prompt }
@@ -389,7 +389,7 @@ async function generateClarificationQuestions(resumeData, vacancyData) {
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: prompt }
