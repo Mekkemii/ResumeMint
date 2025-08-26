@@ -424,6 +424,65 @@
             color: #374151;
         }
 
+        /* Стили для детального анализа */
+        .detailed-analysis {
+            margin-top: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .detailed-analysis h2 {
+            color: #1f2937;
+            margin-bottom: 20px;
+            font-size: 24px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+
+        .detailed-analysis h3 {
+            color: #374151;
+            margin: 20px 0 10px 0;
+            font-size: 18px;
+        }
+
+        .analysis-content {
+            line-height: 1.6;
+            color: #374151;
+        }
+
+        .analysis-content p {
+            margin-bottom: 15px;
+        }
+
+        .analysis-content strong {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        /* Улучшенные стили для результатов */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .results-grid > div {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .results-grid strong {
+            color: #1f2937;
+            font-size: 16px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
         /* Секция анализа резюме */
         .analysis-section {
             padding: 60px 20px;
@@ -1045,9 +1104,38 @@
         }
 
         function displayResults(data) {
-            document.getElementById('level').textContent = data.grade || data.level || 'Не определен';
-            document.getElementById('score').textContent = (data.atsScore || data.score || 0) + '%';
+            // Отображение уровня специалиста
+            const levelElement = document.getElementById('level');
+            const grade = data.grade || data.level || 'Не определен';
+            levelElement.textContent = grade;
             
+            // Добавляем цветовую индикацию для уровня
+            levelElement.className = '';
+            if (grade.includes('Junior')) {
+                levelElement.style.color = '#3b82f6';
+            } else if (grade.includes('Middle')) {
+                levelElement.style.color = '#10b981';
+            } else if (grade.includes('Senior')) {
+                levelElement.style.color = '#f59e0b';
+            } else if (grade.includes('Lead') || grade.includes('Expert')) {
+                levelElement.style.color = '#ef4444';
+            }
+            
+            // Отображение ATS совместимости
+            const score = data.atsScore || data.score || 0;
+            const scoreElement = document.getElementById('score');
+            scoreElement.textContent = score + '%';
+            
+            // Цветовая индикация для ATS
+            if (score >= 80) {
+                scoreElement.style.color = '#10b981';
+            } else if (score >= 60) {
+                scoreElement.style.color = '#f59e0b';
+            } else {
+                scoreElement.style.color = '#ef4444';
+            }
+            
+            // Отображение навыков
             const skillsList = document.getElementById('skills');
             skillsList.innerHTML = '';
             const skills = data.skills || [];
@@ -1057,6 +1145,7 @@
                 skillsList.appendChild(li);
             });
 
+            // Отображение рекомендаций
             const recommendationsList = document.getElementById('recommendations');
             recommendationsList.innerHTML = '';
             const recommendations = data.recommendations || [];
@@ -1066,6 +1155,54 @@
                 recommendationsList.appendChild(li);
             });
 
+            // Отображение сильных и слабых сторон
+            let strongPointsList = document.getElementById('strong-points');
+            if (!strongPointsList) {
+                strongPointsList = document.createElement('ul');
+                strongPointsList.id = 'strong-points';
+                strongPointsList.style.color = '#10b981';
+                strongPointsList.style.margin = '5px 0';
+                strongPointsList.style.paddingLeft = '20px';
+                document.getElementById('results').querySelector('.results-grid').appendChild(
+                    document.createElement('div').appendChild(
+                        document.createElement('strong').appendChild(
+                            document.createTextNode('Сильные стороны:')
+                        )
+                    ).appendChild(strongPointsList)
+                );
+            }
+            strongPointsList.innerHTML = '';
+            const strongPoints = data.strongPoints || [];
+            strongPoints.forEach(point => {
+                const li = document.createElement('li');
+                li.textContent = point;
+                strongPointsList.appendChild(li);
+            });
+
+            let weakPointsList = document.getElementById('weak-points');
+            if (!weakPointsList) {
+                weakPointsList = document.createElement('ul');
+                weakPointsList.id = 'weak-points';
+                weakPointsList.style.color = '#ef4444';
+                weakPointsList.style.margin = '5px 0';
+                weakPointsList.style.paddingLeft = '20px';
+                document.getElementById('results').querySelector('.results-grid').appendChild(
+                    document.createElement('div').appendChild(
+                        document.createElement('strong').appendChild(
+                            document.createTextNode('Слабые стороны:')
+                        )
+                    ).appendChild(weakPointsList)
+                );
+            }
+            weakPointsList.innerHTML = '';
+            const weakPoints = data.weakPoints || [];
+            weakPoints.forEach(point => {
+                const li = document.createElement('li');
+                li.textContent = point;
+                weakPointsList.appendChild(li);
+            });
+
+            // Отображение детального анализа
             let detailedSection = document.getElementById('detailed-analysis');
             if (!detailedSection) {
                 detailedSection = document.createElement('div');
