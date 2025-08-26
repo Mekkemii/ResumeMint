@@ -3,122 +3,296 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ResumeMint.ru - AI ассистент анализа резюме</title>
+    <title>ResumeMint - AI ассистент для анализа резюме</title>
     <style>
-        body {
-            font-family: system-ui, sans-serif;
+        * {
             margin: 0;
-            padding: 20px;
-            background-color: #f9fafb;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
             color: #111827;
         }
-        .container {
-            max-width: 600px;
+
+        /* Черная навигация */
+        .main-nav {
+            background-color: #000;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: opacity 0.2s;
+        }
+
+        .nav-link:hover {
+            opacity: 0.8;
+        }
+
+        /* Основной контент */
+        .main-content {
+            background-color: white;
+            min-height: calc(100vh - 80px);
+            position: relative;
+        }
+
+        .hero-section {
+            text-align: center;
+            padding: 80px 20px;
+            max-width: 800px;
             margin: 0 auto;
         }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
+
+        .hero-title {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #000;
         }
-        .header h1 {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-        .header p {
-            color: #6b7280;
-        }
-        .nav {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-green {
-            background-color: #10b981;
-            color: white;
-        }
-        .btn-orange {
-            background-color: #f59e0b;
-            color: white;
-        }
-        .btn-blue {
-            background-color: #3b82f6;
-            color: white;
-        }
-        .btn-gray {
-            background-color: #f3f4f6;
-            color: #374151;
-            border: 1px solid #d1d5db;
-        }
-        .btn:disabled {
-            background-color: #9ca3af;
-            cursor: not-allowed;
-        }
-        .form-container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+        .hero-subtitle {
+            font-size: 24px;
+            color: #000;
             margin-bottom: 20px;
         }
+
+        .hero-description {
+            font-size: 18px;
+            color: #374151;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-primary {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .cta-primary:hover {
+            background-color: #2563eb;
+        }
+
+        .cta-secondary {
+            background-color: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            padding: 15px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .cta-secondary:hover {
+            border-color: #9ca3af;
+            background-color: #f9fafb;
+        }
+
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .modal h2 {
+            color: #1f2937;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .modal p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: #374151;
+        }
+
+        .modal ul {
+            margin-bottom: 15px;
+            padding-left: 20px;
+        }
+
+        .modal li {
+            margin-bottom: 8px;
+            color: #374151;
+        }
+
+        .github-link {
+            display: inline-block;
+            background-color: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-top: 20px;
+            transition: background-color 0.2s;
+        }
+
+        .github-link:hover {
+            background-color: #2563eb;
+        }
+
+        /* Секция анализа резюме */
+        .analysis-section {
+            padding: 60px 20px;
+            background-color: #f8fafc;
+            display: none;
+        }
+
+        .analysis-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .analysis-title {
+            text-align: center;
+            font-size: 32px;
+            margin-bottom: 40px;
+            color: #1f2937;
+        }
+
+        .form-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
+
         label {
             display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
         }
+
         textarea {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #d1d5db;
-            border-radius: 5px;
+            border-radius: 6px;
             min-height: 150px;
             resize: vertical;
-            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 14px;
         }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
         .file-upload {
             border: 2px dashed #d1d5db;
-            border-radius: 5px;
-            padding: 20px;
+            border-radius: 6px;
+            padding: 30px;
             text-align: center;
             cursor: pointer;
             transition: border-color 0.3s;
         }
+
         .file-upload:hover {
             border-color: #3b82f6;
         }
+
         .file-upload.dragover {
             border-color: #3b82f6;
             background-color: #f0f9ff;
         }
+
         .file-info {
-            margin-top: 10px;
-            padding: 10px;
+            margin-top: 15px;
+            padding: 15px;
             background-color: #f8fafc;
-            border-radius: 5px;
+            border-radius: 6px;
             display: none;
             position: relative;
         }
-        
+
         .file-info-content {
             margin-right: 30px;
         }
-        
+
         .file-remove-btn {
             position: absolute;
-            top: 5px;
-            right: 5px;
+            top: 10px;
+            right: 10px;
             background: #ef4444;
             color: white;
             border: none;
@@ -130,22 +304,53 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.2s;
         }
-        
+
         .file-remove-btn:hover {
             background: #dc2626;
         }
+
         .button-group {
             display: flex;
-            gap: 10px;
+            gap: 15px;
             flex-wrap: wrap;
         }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-secondary {
+            background-color: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+
         .loading {
             display: none;
             text-align: center;
             margin: 20px 0;
         }
+
         .spinner {
             border: 3px solid #f3f4f6;
             border-top: 3px solid #3b82f6;
@@ -155,35 +360,41 @@
             animation: spin 1s linear infinite;
             margin: 0 auto 10px;
         }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
         .error {
             background-color: #fef2f2;
             border: 1px solid #fecaca;
             color: #dc2626;
-            padding: 10px;
-            border-radius: 5px;
+            padding: 15px;
+            border-radius: 6px;
             margin-bottom: 20px;
             display: none;
         }
+
         .results {
-            background-color: #f8fafc;
-            padding: 20px;
-            border-radius: 5px;
-            border: 1px solid #e2e8f0;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             display: none;
         }
+
         .results h3 {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            color: #1f2937;
         }
+
         .results-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 20px;
         }
-        
+
         .detailed-analysis {
             margin-top: 30px;
             padding: 20px;
@@ -191,190 +402,197 @@
             border-radius: 8px;
             border-left: 4px solid #3b82f6;
         }
-        
+
         .detailed-analysis h2 {
-            color: #1e293b;
+            color: #1f2937;
             margin-bottom: 20px;
-            font-size: 1.5em;
         }
-        
-        .detailed-analysis h3 {
-            color: #374151;
-            margin: 20px 0 10px 0;
-            font-size: 1.2em;
-        }
-        
+
         .analysis-content {
             line-height: 1.6;
             color: #374151;
         }
-        
-        .analysis-content p {
-            margin-bottom: 10px;
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 36px;
+            }
+
+            .hero-subtitle {
+                font-size: 20px;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
         }
-        
-        .analysis-content strong {
-            color: #1e293b;
+
+        /* Иконки */
+        .icon {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
         }
-        
-        .question-item {
-            margin-bottom: 15px;
-        }
-        
-        .question-item label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #374151;
-        }
-        
-        .question-item input,
-        .question-item select {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 5px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-        
-        .question-item input:focus,
-        .question-item select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        
-        .footer {
-            text-align: center;
-            color: #6b7280;
-            margin-top: 30px;
-        }
+
+        .icon-search::before { content: "🔍"; }
+        .icon-arrow-down::before { content: "↓"; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>ResumeMint.ru</h1>
-            <p>AI ассистент для анализа резюме</p>
+    <!-- Черная навигация -->
+    <nav class="main-nav">
+        <div class="logo">Логотип</div>
+        <div class="nav-links">
+            <a href="#" class="nav-link">
+                О нас
+                <span class="icon icon-arrow-down"></span>
+            </a>
+            <a href="#" class="nav-link">Поддержать проект</a>
+            <a href="#" class="nav-link">Контакты для ОС</a>
+            <span>TG - @kaikras</span>
         </div>
+    </nav>
 
-        <div class="nav">
-            <a href="https://t.me/resumemint_support" target="_blank" class="btn btn-green">О нас</a>
-            <a href="https://www.tinkoff.ru/rm/ivanov.ivan123/1234567890" target="_blank" class="btn btn-orange">Донат</a>
-        </div>
+    <!-- Основной контент -->
+    <main class="main-content">
+        <!-- Героическая секция -->
+        <section class="hero-section">
+            <h1 class="hero-title">ResumeMint</h1>
+            <h2 class="hero-subtitle">AI ассистент для анализа резюме</h2>
+            <p class="hero-description">
+                ResumeMint - AI-ассистент для анализа резюме и вакансий. Мы помогаем специалистам создавать эффективные резюме.
+            </p>
+            <div class="cta-buttons">
+                <button class="cta-primary" onclick="showAnalysis()">
+                    <span class="icon icon-search"></span>
+                    Проверить резюме
+                </button>
+                <button class="cta-secondary" onclick="showModal()">Как работает сервис</button>
+            </div>
+        </section>
 
-        <div class="form-container">
-            <h2>Анализ резюме</h2>
+        <!-- Секция анализа резюме -->
+        <section id="analysisSection" class="analysis-section">
+            <div class="analysis-container">
+                <h2 class="analysis-title">Анализ резюме</h2>
+                
+                <div class="form-container">
+                    <div class="form-group">
+                        <label for="resumeText">Вставьте текст вашего резюме:</label>
+                        <textarea id="resumeText" placeholder="Вставьте текст вашего резюме здесь..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Или загрузите файл резюме:</label>
+                        <div class="file-upload" onclick="document.getElementById('fileInput').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                            <p>Перетащите файл сюда или нажмите для выбора</p>
+                            <p style="font-size: 0.9em; color: #6b7280;">Поддерживаемые форматы: .docx, .doc, .pdf, .txt</p>
+                        </div>
+                        <input type="file" id="fileInput" accept=".docx,.doc,.pdf,.txt" style="display: none;" onchange="handleFileSelect(event)">
+                        <div id="fileInfo" class="file-info">
+                            <div class="file-info-content"></div>
+                            <button type="button" class="file-remove-btn" onclick="clearFile()">✕</button>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button onclick="analyzeResume()" id="analyzeBtn" class="btn btn-primary">Анализировать резюме</button>
+                        <button onclick="loadSample()" class="btn btn-secondary">Загрузить пример</button>
+                        <button onclick="clearFile()" id="clearFileBtn" class="btn btn-secondary" style="display: none;">Удалить файл</button>
+                    </div>
+
+                    <div id="loading" class="loading">
+                        <div class="spinner"></div>
+                        <p>AI анализирует ваше резюме...</p>
+                    </div>
+
+                    <div id="error" class="error"></div>
+                </div>
+
+                <div id="results" class="results">
+                    <h3>Результаты анализа</h3>
+                    <div class="results-grid">
+                        <div>
+                            <strong>Уровень специалиста:</strong>
+                            <p id="level" style="color: #3b82f6; margin: 5px 0;"></p>
+                        </div>
+                        <div>
+                            <strong>ATS совместимость:</strong>
+                            <p id="score" style="color: #3b82f6; margin: 5px 0;"></p>
+                        </div>
+                        <div>
+                            <strong>Найденные навыки:</strong>
+                            <ul id="skills" style="color: #10b981; margin: 5px 0; padding-left: 20px;"></ul>
+                        </div>
+                        <div>
+                            <strong>Рекомендации:</strong>
+                            <ul id="recommendations" style="color: #6b7280; margin: 5px 0; padding-left: 20px;"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Модальное окно с описанием сервиса -->
+    <div id="serviceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Как работает ResumeMint</h2>
             
-            <div class="form-group">
-                <label for="resumeText">Вставьте текст вашего резюме:</label>
-                <textarea id="resumeText" placeholder="Вставьте текст вашего резюме здесь..."></textarea>
-            </div>
+            <p><strong>ResumeMint</strong> - это AI-ассистент для анализа резюме и проверки совместимости с ATS-системами.</p>
+            
+            <h3>🚀 Основные возможности:</h3>
+            <ul>
+                <li><strong>Анализ резюме:</strong> Структурный анализ, определение грейда (Junior/Middle/Senior/Lead)</li>
+                <li><strong>ATS-совместимость:</strong> Проверка оптимизации под системы автоматического отбора</li>
+                <li><strong>Анализ вакансий:</strong> Парсинг требований и сравнение с профилем кандидата</li>
+                <li><strong>Рекомендации:</strong> Персонализированные советы по улучшению резюме</li>
+                <li><strong>Генерация документов:</strong> Редактированное резюме и сопроводительные письма</li>
+            </ul>
 
-            <div class="form-group">
-                <label>Или загрузите файл резюме:</label>
-                <div class="file-upload" onclick="document.getElementById('fileInput').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                    <p>Перетащите файл сюда или нажмите для выбора</p>
-                    <p style="font-size: 0.9em; color: #6b7280;">Поддерживаемые форматы: .docx, .doc, .pdf, .txt</p>
-                </div>
-                <input type="file" id="fileInput" accept=".docx,.doc,.pdf,.txt" style="display: none;" onchange="handleFileSelect(event)">
-                <div id="fileInfo" class="file-info">
-                    <div class="file-info-content"></div>
-                    <button type="button" class="file-remove-btn" onclick="clearFile()" style="display: none;">✕</button>
-                </div>
-            </div>
+            <h3>🛠 Технологии:</h3>
+            <p>Использует OpenAI GPT API для анализа и генерации рекомендаций, поддерживает загрузку файлов .docx, .pdf, .txt</p>
 
-            <!-- Уточняющие вопросы -->
-            <div class="form-group" id="questionsSection" style="display: none;">
-                <h3>Уточняющие вопросы для лучшего анализа:</h3>
-                <div class="question-item">
-                    <label>Желаемая должность:</label>
-                    <input type="text" id="desiredPosition" placeholder="Например: Frontend Developer, Data Scientist">
-                </div>
-                <div class="question-item">
-                    <label>Опыт работы (лет):</label>
-                    <select id="experienceYears">
-                        <option value="">Выберите опыт</option>
-                        <option value="0-1">0-1 год</option>
-                        <option value="1-2">1-2 года</option>
-                        <option value="2-3">2-3 года</option>
-                        <option value="3-5">3-5 лет</option>
-                        <option value="5-8">5-8 лет</option>
-                        <option value="8+">8+ лет</option>
-                    </select>
-                </div>
-                <div class="question-item">
-                    <label>Уровень английского:</label>
-                    <select id="englishLevel">
-                        <option value="">Выберите уровень</option>
-                        <option value="A1">A1 - Начальный</option>
-                        <option value="A2">A2 - Элементарный</option>
-                        <option value="B1">B1 - Средний</option>
-                        <option value="B2">B2 - Выше среднего</option>
-                        <option value="C1">C1 - Продвинутый</option>
-                        <option value="C2">C2 - В совершенстве</option>
-                    </select>
-                </div>
-                <div class="question-item">
-                    <label>Желаемая зарплата (руб/мес):</label>
-                    <input type="number" id="desiredSalary" placeholder="Например: 150000">
-                </div>
-                <div class="question-item">
-                    <label>Готовность к переезду:</label>
-                    <select id="relocation">
-                        <option value="">Выберите</option>
-                        <option value="yes">Да, готов</option>
-                        <option value="no">Нет, не готов</option>
-                        <option value="maybe">Рассмотрю предложения</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="button-group">
-                <button onclick="showQuestions()" id="questionsBtn" class="btn btn-green">Заполнить уточняющие вопросы</button>
-                <button onclick="analyzeResume()" id="analyzeBtn" class="btn btn-blue">Анализировать резюме</button>
-                <button onclick="loadSample()" class="btn btn-gray">Загрузить пример</button>
-                <button onclick="clearFile()" id="clearFileBtn" class="btn btn-gray" style="display: none;">Удалить файл</button>
-            </div>
-
-            <div id="loading" class="loading">
-                <div class="spinner"></div>
-                <p>AI анализирует ваше резюме...</p>
-            </div>
-
-            <div id="error" class="error"></div>
-        </div>
-
-        <div id="results" class="results">
-            <h3>Результаты анализа</h3>
-            <div class="results-grid">
-                <div>
-                    <strong>Уровень специалиста:</strong>
-                    <p id="level" style="color: #3b82f6; margin: 5px 0;"></p>
-                </div>
-                <div>
-                    <strong>ATS совместимость:</strong>
-                    <p id="score" style="color: #3b82f6; margin: 5px 0;"></p>
-                </div>
-                <div>
-                    <strong>Найденные навыки:</strong>
-                    <ul id="skills" style="color: #10b981; margin: 5px 0; padding-left: 20px;"></ul>
-                </div>
-                <div>
-                    <strong>Рекомендации:</strong>
-                    <ul id="recommendations" style="color: #6b7280; margin: 5px 0; padding-left: 20px;"></ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>ResumeMint.ru - AI-ассистент для анализа резюме и вакансий. Мы помогаем IT-специалистам создавать эффективные резюме.</p>
+            <a href="https://github.com/your-repo/resume-mint" target="_blank" class="github-link">
+                📖 Читать полную документацию на GitHub
+            </a>
         </div>
     </div>
 
     <script>
         let selectedFile = null;
+
+        function showAnalysis() {
+            document.getElementById('analysisSection').style.display = 'block';
+            document.getElementById('analysisSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showModal() {
+            document.getElementById('serviceModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('serviceModal').style.display = 'none';
+        }
+
+        // Закрытие модального окна при клике вне его
+        window.onclick = function(event) {
+            const modal = document.getElementById('serviceModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
 
         function handleFileSelect(event) {
             const file = event.target.files[0];
@@ -410,10 +628,8 @@
         function showFileInfo(file) {
             const fileInfo = document.getElementById('fileInfo');
             const fileInfoContent = fileInfo.querySelector('.file-info-content');
-            const removeBtn = fileInfo.querySelector('.file-remove-btn');
             
             fileInfo.style.display = 'block';
-            removeBtn.style.display = 'flex';
             
             fileInfoContent.innerHTML = `
                 <strong>Выбран файл:</strong> ${file.name}<br>
@@ -428,18 +644,15 @@
             const error = document.getElementById('error');
             const results = document.getElementById('results');
 
-            // Скрываем предыдущие результаты и ошибки
             error.style.display = 'none';
             results.style.display = 'none';
 
-            // Проверяем, что есть данные для анализа
             const resumeText = document.getElementById('resumeText').value.trim();
             if (!resumeText && !selectedFile) {
                 showError('Введите текст резюме или загрузите файл!');
                 return;
             }
 
-            // Показываем загрузку
             analyzeBtn.disabled = true;
             loading.style.display = 'block';
 
@@ -447,7 +660,6 @@
                 let response;
                 
                 if (selectedFile) {
-                    // Анализ файла
                     const formData = new FormData();
                     formData.append('resume', selectedFile);
                     
@@ -456,17 +668,12 @@
                         body: formData
                     });
                 } else {
-                    // Анализ текста
-                    const questionsData = getQuestionsData();
                     response = await fetch('/api/resume/analyze-text', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ 
-                            resumeText,
-                            questions: questionsData
-                        })
+                        body: JSON.stringify({ resumeText })
                     });
                 }
 
@@ -486,14 +693,12 @@
                 console.error('Analysis error:', err);
                 showError(err.message || 'Ошибка соединения с сервером');
             } finally {
-                // Скрываем загрузку
                 analyzeBtn.disabled = false;
                 loading.style.display = 'none';
             }
         }
 
         function displayResults(data) {
-            // Обновляем краткую информацию
             document.getElementById('level').textContent = data.grade || data.level || 'Не определен';
             document.getElementById('score').textContent = (data.atsScore || data.score || 0) + '%';
             
@@ -515,19 +720,14 @@
                 recommendationsList.appendChild(li);
             });
 
-            // Добавляем детальный анализ
-            const resultsDiv = document.getElementById('results');
-            
-            // Создаем или обновляем секцию детального анализа
             let detailedSection = document.getElementById('detailed-analysis');
             if (!detailedSection) {
                 detailedSection = document.createElement('div');
                 detailedSection.id = 'detailed-analysis';
                 detailedSection.className = 'detailed-analysis';
-                resultsDiv.appendChild(detailedSection);
+                document.getElementById('results').appendChild(detailedSection);
             }
             
-            // Форматируем детальный анализ
             if (data.detailedAnalysis) {
                 const formattedAnalysis = data.detailedAnalysis
                     .replace(/# (.*?)\n/g, '<h2>$1</h2>')
@@ -557,37 +757,11 @@
             document.getElementById('resumeText').value = 'Иван Иванов\nFrontend Developer\n\nОпыт работы: 2 года\nНавыки: React, TypeScript, JavaScript\nОбразование: Высшее техническое';
             clearFile();
         }
-
-        function showQuestions() {
-            const questionsSection = document.getElementById('questionsSection');
-            const questionsBtn = document.getElementById('questionsBtn');
-            
-            if (questionsSection.style.display === 'none') {
-                questionsSection.style.display = 'block';
-                questionsBtn.textContent = 'Скрыть вопросы';
-                questionsBtn.className = 'btn btn-gray';
-            } else {
-                questionsSection.style.display = 'none';
-                questionsBtn.textContent = 'Заполнить уточняющие вопросы';
-                questionsBtn.className = 'btn btn-green';
-            }
-        }
-        
-        function getQuestionsData() {
-            return {
-                desiredPosition: document.getElementById('desiredPosition').value,
-                experienceYears: document.getElementById('experienceYears').value,
-                englishLevel: document.getElementById('englishLevel').value,
-                desiredSalary: document.getElementById('desiredSalary').value,
-                relocation: document.getElementById('relocation').value
-            };
-        }
         
         function clearFile() {
             document.getElementById('fileInput').value = '';
             document.getElementById('fileInfo').style.display = 'none';
             document.getElementById('clearFileBtn').style.display = 'none';
-            document.querySelector('.file-remove-btn').style.display = 'none';
             selectedFile = null;
         }
     </script>
