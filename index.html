@@ -1158,18 +1158,20 @@
             // Отображение сильных и слабых сторон
             let strongPointsList = document.getElementById('strong-points');
             if (!strongPointsList) {
+                const strongPointsContainer = document.createElement('div');
+                const strongPointsTitle = document.createElement('strong');
+                strongPointsTitle.textContent = 'Сильные стороны:';
+                strongPointsTitle.style.color = '#10b981';
+                
                 strongPointsList = document.createElement('ul');
                 strongPointsList.id = 'strong-points';
                 strongPointsList.style.color = '#10b981';
                 strongPointsList.style.margin = '5px 0';
                 strongPointsList.style.paddingLeft = '20px';
-                document.getElementById('results').querySelector('.results-grid').appendChild(
-                    document.createElement('div').appendChild(
-                        document.createElement('strong').appendChild(
-                            document.createTextNode('Сильные стороны:')
-                        )
-                    ).appendChild(strongPointsList)
-                );
+                
+                strongPointsContainer.appendChild(strongPointsTitle);
+                strongPointsContainer.appendChild(strongPointsList);
+                document.getElementById('results').querySelector('.results-grid').appendChild(strongPointsContainer);
             }
             strongPointsList.innerHTML = '';
             const strongPoints = data.strongPoints || [];
@@ -1181,18 +1183,20 @@
 
             let weakPointsList = document.getElementById('weak-points');
             if (!weakPointsList) {
+                const weakPointsContainer = document.createElement('div');
+                const weakPointsTitle = document.createElement('strong');
+                weakPointsTitle.textContent = 'Слабые стороны:';
+                weakPointsTitle.style.color = '#ef4444';
+                
                 weakPointsList = document.createElement('ul');
                 weakPointsList.id = 'weak-points';
                 weakPointsList.style.color = '#ef4444';
                 weakPointsList.style.margin = '5px 0';
                 weakPointsList.style.paddingLeft = '20px';
-                document.getElementById('results').querySelector('.results-grid').appendChild(
-                    document.createElement('div').appendChild(
-                        document.createElement('strong').appendChild(
-                            document.createTextNode('Слабые стороны:')
-                        )
-                    ).appendChild(weakPointsList)
-                );
+                
+                weakPointsContainer.appendChild(weakPointsTitle);
+                weakPointsContainer.appendChild(weakPointsList);
+                document.getElementById('results').querySelector('.results-grid').appendChild(weakPointsContainer);
             }
             weakPointsList.innerHTML = '';
             const weakPoints = data.weakPoints || [];
