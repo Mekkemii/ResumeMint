@@ -263,6 +263,159 @@
             font-size: 18px;
         }
 
+        /* Модальное окно поддержки проекта */
+        .support-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .support-message {
+            margin-bottom: 30px;
+        }
+
+        .support-text {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #374151;
+            margin-bottom: 20px;
+            text-align: justify;
+        }
+
+        .payment-section {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .payment-section h3 {
+            color: #1f2937;
+            margin-bottom: 20px;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .payment-method {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .payment-icon {
+            font-size: 32px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+        }
+
+        .payment-info h4 {
+            color: #1f2937;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .card-number {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .card-label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .card-value {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #1f2937;
+            background: #f3f4f6;
+            padding: 6px 12px;
+            border-radius: 6px;
+            letter-spacing: 1px;
+        }
+
+        .copy-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #2563eb;
+        }
+
+        .card-note {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .gratitude-section {
+            text-align: center;
+            padding: 25px;
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border-radius: 12px;
+            border: 1px solid #bae6fd;
+        }
+
+        .gratitude-section h3 {
+            color: #0369a1;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        .gratitude-text {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #0c4a6e;
+            margin-bottom: 25px;
+        }
+
+        .support-benefits {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .benefit-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .benefit-icon {
+            font-size: 20px;
+        }
+
+        .benefit-item span:last-child {
+            font-weight: 500;
+            color: #374151;
+        }
+
         /* Секция анализа резюме */
         .analysis-section {
             padding: 60px 20px;
@@ -517,7 +670,7 @@
                 О нас
                 <span class="icon icon-arrow-down"></span>
             </a>
-            <a href="#" class="nav-link">Поддержать проект</a>
+            <a href="#" class="nav-link" onclick="showSupportModal()">Поддержать проект</a>
             <a href="#" class="nav-link" onclick="showQRModal()">Контакты для ОС | TG - @kaikras</a>
         </div>
     </nav>
@@ -680,6 +833,72 @@
         </div>
     </div>
 
+    <!-- Модальное окно поддержки проекта -->
+    <div id="supportModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSupportModal()">&times;</span>
+            <h2>Поддержать проект ResumeMint</h2>
+            
+            <div class="support-container">
+                <div class="support-message">
+                    <p class="support-text">
+                        Уважаемые пользователи! Мы выражаем искреннюю благодарность за доверие к нашему проекту ResumeMint. 
+                        Ваша поддержка помогает нам развивать и улучшать сервис, делая его более доступным и функциональным для всех специалистов IT-сферы.
+                    </p>
+                    
+                    <p class="support-text">
+                        Каждый ваш вклад направляется на развитие новых функций, улучшение AI-алгоритмов и поддержание стабильной работы платформы. 
+                        Мы стремимся создать лучший инструмент для анализа резюме и карьерного развития.
+                    </p>
+                </div>
+
+                <div class="payment-section">
+                    <h3>Способы поддержки</h3>
+                    
+                    <div class="payment-method">
+                        <div class="payment-icon">💳</div>
+                        <div class="payment-info">
+                            <h4>Банковская карта Тинькофф</h4>
+                            <div class="card-number">
+                                <span class="card-label">Номер карты:</span>
+                                <span class="card-value">2200 7004 1047 2442</span>
+                                <button class="copy-btn" onclick="copyCardNumber()">Копировать</button>
+                            </div>
+                            <p class="card-note">Получатель: ИП Иванов И.И.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gratitude-section">
+                    <h3>Благодарим за поддержку!</h3>
+                    <p class="gratitude-text">
+                        Ваша поддержка позволяет нам оставаться независимыми и сосредоточиться на создании качественного продукта. 
+                        Мы ценим каждого пользователя и стремимся оправдать ваше доверие.
+                    </p>
+                    
+                    <div class="support-benefits">
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🚀</span>
+                            <span>Развитие новых функций</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🤖</span>
+                            <span>Улучшение AI-алгоритмов</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🔧</span>
+                            <span>Поддержка сервера</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">📱</span>
+                            <span>Мобильная версия</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let selectedFile = null;
 
@@ -704,16 +923,45 @@
             document.getElementById('qrModal').style.display = 'none';
         }
 
+        function showSupportModal() {
+            document.getElementById('supportModal').style.display = 'block';
+        }
+
+        function closeSupportModal() {
+            document.getElementById('supportModal').style.display = 'none';
+        }
+
+        function copyCardNumber() {
+            const cardNumber = '2200 7004 1047 2442';
+            navigator.clipboard.writeText(cardNumber).then(function() {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Скопировано!';
+                btn.style.background = '#22c55e';
+                
+                setTimeout(function() {
+                    btn.textContent = originalText;
+                    btn.style.background = '#3b82f6';
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Ошибка копирования: ', err);
+            });
+        }
+
         // Закрытие модального окна при клике вне его
         window.onclick = function(event) {
             const serviceModal = document.getElementById('serviceModal');
             const qrModal = document.getElementById('qrModal');
+            const supportModal = document.getElementById('supportModal');
             
             if (event.target === serviceModal) {
                 closeModal();
             }
             if (event.target === qrModal) {
                 closeQRModal();
+            }
+            if (event.target === supportModal) {
+                closeSupportModal();
             }
         }
 
