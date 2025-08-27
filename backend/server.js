@@ -158,6 +158,12 @@ function userPremium(resumeText, jobText) {
   return `Сделай: (1) резюме {ats_score, issues, grade, resume_summary, hard_skills, soft_skills}; (2) вакансия {job_grade, requirements, nice_to_have, job_summary}; (3) match {match_percent, gaps, highlights, explanation}; (4) cover_letter (110-160 слов). Верни один JSON по схеме.\nРЕЗЮМЕ:\n${resumeText}\nВАКАНСИЯ:\n${jobText}`;
 }
 
+// Combo (summary + job analyze + match) minimal prompt
+function sysCombo() { return 'Ты — карьерный ассистент. Отвечай ТОЛЬКО валидным JSON.'; }
+function userCombo(resumeText, jobText) {
+  return `ЗАДАЧА:\n1) Выжимка резюме: кратко (<=800 символов) и до 12 hard_skills.\n2) Разбор вакансии: requirements (5–12 пунктов) и job_summary (<=600).\n3) Сопоставление: match_percent (0–100), highlights, gaps, explanation (<=300).\nФОРМАТ:\n{\n  "resume": { "resume_summary": "<=800", "hard_skills": [] },\n  "job": { "requirements": [], "job_summary": "<=600" },\n  "match": { "match_percent": 0, "highlights": [], "gaps": [], "explanation": "" }\n}\n\nРЕЗЮМЕ:\n${resumeText}\n\nВАКАНСИЯ:\n${jobText}`;
+}
+
 // ===== ATS / Grade short prompts =====
 function sysAts() { return 'Ты — эксперт по ATS. Верни только JSON.'; }
 function userAts(resumeText) {
@@ -890,6 +896,28 @@ app.post('/api/resume/grade', async (req, res) => {
     setCached(cacheKey, out);
     res.json(out);
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Combo endpoint: summary + job + match (без ATS/grade/cover)
+app.post('/api/combo/summary-match', async (req, res) => {
+  try {
+    const { resumeText, jobText } = req.body;
+    if (!resumeText || !jobText) return res.status(400).json({ error: 'Нужны resumeText и jobText' });
+    const resumeT = smartTrim(resumeText, 8000);
+    const jobT = smartTrim(jobText, 8000);
+    const cacheKey = `combo:${resumeT}:${jobT}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+    const { json, usage } = await chatJson([
+      { role: 'system', content: sysCombo() },
+      { role: 'user', content: userCombo(resumeT, jobT) }
+    ], { max_tokens: 900, temperature: 0.2 });
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // Health check
