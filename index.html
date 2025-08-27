@@ -922,9 +922,14 @@
         .analysis-content { color: var(--text-2); }
         .results-grid strong { color: var(--text); }
 
-        /* Checks bar */
-        .checks-bar { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; }
-        .btn-mini { 
+        /* Panel switcher */
+        .panel-switcher { 
+            margin-bottom: 20px; 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 10px; 
+        }
+        .panel-btn { 
             padding: 10px 14px; 
             border-radius: 10px; 
             font-size: 14px; 
@@ -935,21 +940,87 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-mini:hover { 
+        .panel-btn:hover { 
             background: rgba(255, 255, 255, 0.1); 
             border-color: rgba(255, 255, 255, 0.2); 
             transform: translateY(-1px);
         }
-        .btn-mini.premium {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
+        .panel-btn.active {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.3);
             color: white;
-            font-weight: 600;
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.2) inset;
         }
-        .btn-mini.premium:hover {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(236, 72, 153, 0.3));
-            border-color: rgba(139, 92, 246, 0.4);
+
+        /* Form panels */
+        .form-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .panel-header {
+            margin-bottom: 20px;
+        }
+        .panel-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 8px;
+        }
+        .panel-hint {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+        }
+        .panel-content {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .panel-actions {
+            display: flex;
+            justify-content: center;
+        }
+        .run-btn {
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.8), rgba(236, 72, 153, 0.8));
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+        .run-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 1), rgba(236, 72, 153, 1));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+        }
+        .run-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .run-btn.premium {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.8), rgba(239, 68, 68, 0.8));
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+        .run-btn.premium:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 1), rgba(239, 68, 68, 1));
+            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+        }
+        .file-input {
+            margin-top: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
         }
 
         .checks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 12px; }
@@ -1023,38 +1094,124 @@
                 <h2 class="analysis-title">Анализ резюме</h2>
                 
                 <div class="form-container">
-                    <div class="form-group">
-                        <label for="resumeText">Вставьте текст вашего резюме:</label>
-                        <textarea id="resumeText" placeholder="Вставьте текст вашего резюме здесь..."></textarea>
+                    <!-- Панель переключения -->
+                    <div class="panel-switcher">
+                        <button class="panel-btn" onclick="openPanel('combo')">Комбо (выжимка+JD+сопоставить)</button>
+                        <button class="panel-btn" onclick="openPanel('ats')">ATS-проверка</button>
+                        <button class="panel-btn" onclick="openPanel('grade')">Определить грейд</button>
+                        <button class="panel-btn" onclick="openPanel('cover')">Сопроводительное</button>
+                        <button class="panel-btn" onclick="openPanel('premium')">Всё сразу (Premium)</button>
                     </div>
 
-                    <div class="form-group">
-                        <label for="jobText">Вставьте текст вакансии (для комбо и сопоставления):</label>
-                        <textarea id="jobText" placeholder="Вставьте текст вакансии здесь..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Или загрузите файл резюме:</label>
-                        <div class="file-upload" onclick="document.getElementById('fileInput').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                            <p>Перетащите файл сюда или нажмите для выбора</p>
-                            <p style="font-size: 0.9em; color: #6b7280;">Поддерживаемые форматы: .docx, .doc, .pdf, .txt</p>
+                    <!-- Панель Комбо -->
+                    <div id="panel-combo" class="form-panel">
+                        <div class="panel-header">
+                            <h3>Комбо: выжимка резюме + разбор вакансии + сопоставление</h3>
+                            <p class="panel-hint">Вставьте резюме и вакансию для комплексного анализа</p>
                         </div>
-                        <input type="file" id="fileInput" accept=".docx,.doc,.pdf,.txt" style="display: none;" onchange="handleFileSelect(event)">
-                        <div id="fileInfo" class="file-info">
-                            <div class="file-info-content"></div>
-                            <button type="button" class="file-remove-btn" onclick="clearFile()">✕</button>
+                        <div class="panel-content">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Текст резюме:</label>
+                                    <textarea id="combo-resume" placeholder="Вставьте текст резюме..."></textarea>
+                                    <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleComboFile(event, 'resume')" class="file-input">
+                                </div>
+                                <div class="form-group">
+                                    <label>Текст вакансии:</label>
+                                    <textarea id="combo-job" placeholder="Вставьте текст вакансии..."></textarea>
+                                    <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleComboFile(event, 'job')" class="file-input">
+                                </div>
+                            </div>
+                            <div class="panel-actions">
+                                <button class="run-btn" onclick="runComboFromPanel()" disabled>Запустить комбо</button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Legacy buttons removed - replaced by hero actions -->
+                    <!-- Панель ATS -->
+                    <div id="panel-ats" class="form-panel" style="display: none;">
+                        <div class="panel-header">
+                            <h3>ATS-проверка</h3>
+                            <p class="panel-hint">Нужен только текст резюме для проверки совместимости с ATS</p>
+                        </div>
+                        <div class="panel-content">
+                            <div class="form-group">
+                                <label>Текст резюме:</label>
+                                <textarea id="ats-resume" placeholder="Вставьте текст резюме..."></textarea>
+                                <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleAtsFile(event)" class="file-input">
+                            </div>
+                            <div class="panel-actions">
+                                <button class="run-btn" onclick="runAtsFromPanel()" disabled>Запустить ATS</button>
+                            </div>
+                        </div>
+                    </div>
 
-                    <!-- Checks Bar: быстрые чеки -->
-                    <div class="checks-bar">
-                        <button class="btn-mini" onclick="runCombo()">Комбо (выжимка+JD+сопоставить)</button>
-                        <button class="btn-mini" onclick="runAts()">ATS-проверка</button>
-                        <button class="btn-mini" onclick="runGrade()">Определить грейд</button>
-                        <button class="btn-mini" onclick="runCover()">Сопроводительное</button>
-                        <button class="btn-mini premium" onclick="runOneShot()" title="Всё сразу (дороже по токенам)">Всё сразу (Premium)</button>
+                    <!-- Панель Грейд -->
+                    <div id="panel-grade" class="form-panel" style="display: none;">
+                        <div class="panel-header">
+                            <h3>Определить грейд</h3>
+                            <p class="panel-hint">Нужен только текст резюме для определения уровня специалиста</p>
+                        </div>
+                        <div class="panel-content">
+                            <div class="form-group">
+                                <label>Текст резюме:</label>
+                                <textarea id="grade-resume" placeholder="Вставьте текст резюме..."></textarea>
+                                <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleGradeFile(event)" class="file-input">
+                            </div>
+                            <div class="panel-actions">
+                                <button class="run-btn" onclick="runGradeFromPanel()" disabled>Определить грейд</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Панель Сопроводительное -->
+                    <div id="panel-cover" class="form-panel" style="display: none;">
+                        <div class="panel-header">
+                            <h3>Сопроводительное письмо</h3>
+                            <p class="panel-hint">Нужны выжимка резюме и описание вакансии</p>
+                        </div>
+                        <div class="panel-content">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Выжимка резюме:</label>
+                                    <textarea id="cover-resume" placeholder="Вставьте выжимку резюме..."></textarea>
+                                    <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleCoverFile(event, 'resume')" class="file-input">
+                                </div>
+                                <div class="form-group">
+                                    <label>Описание вакансии:</label>
+                                    <textarea id="cover-job" placeholder="Вставьте описание вакансии..."></textarea>
+                                    <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleCoverFile(event, 'job')" class="file-input">
+                                </div>
+                            </div>
+                            <div class="panel-actions">
+                                <button class="run-btn" onclick="runCoverFromPanel()" disabled>Сгенерировать письмо</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Панель Premium -->
+                    <div id="panel-premium" class="form-panel" style="display: none;">
+                        <div class="panel-header">
+                            <h3>Всё сразу (Premium)</h3>
+                            <p class="panel-hint">Полный пакет: выжимка, JD, сопоставление, письмо</p>
+                        </div>
+                        <div class="panel-content">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Текст резюме:</label>
+                                    <textarea id="premium-resume" placeholder="Вставьте текст резюме..."></textarea>
+                                    <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handlePremiumFile(event, 'resume')" class="file-input">
+                                </div>
+                                <div class="form-group">
+                                    <label>Текст вакансии:</label>
+                                    <textarea id="premium-job" placeholder="Вставьте текст вакансии..."></textarea>
+                                    <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handlePremiumFile(event, 'job')" class="file-input">
+                                </div>
+                            </div>
+                            <div class="panel-actions">
+                                <button class="run-btn premium" onclick="runPremiumFromPanel()" disabled>Запустить всё сразу</button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Результаты по ключам (без накопления) -->
@@ -1197,7 +1354,7 @@
     <script>
         let selectedFile = null;
 
-        // Hero Actions - отправка событий в анализаторе
+        // Hero Actions - открытие панелей форм
         function fireAction(action) {
             // Показываем секцию анализа
             document.getElementById('analysisSection').style.display = 'block';
@@ -1205,47 +1362,175 @@
             // Плавный скролл к анализатору
             document.getElementById('analysisSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
             
-            // Отправляем событие для обработки в анализаторе
-            window.dispatchEvent(new CustomEvent('rm-action', { detail: action }));
+            // Открываем соответствующую панель
+            openPanel(action);
         }
 
-        // Обработчик событий из героя
-        window.addEventListener('rm-action', function(e) {
-            const action = e.detail;
+        // Система панелей с формами
+        let currentPanel = 'combo';
+        
+        function openPanel(panel) {
+            currentPanel = panel;
+            updatePanelVisibility();
             
-            // Открываем модалку Premium
-            if (action === 'premium') {
-                // Показываем модалку для ввода вакансии
-                const vacancyText = prompt('Вставьте текст вакансии для премиум-анализа:');
-                if (vacancyText) {
-                    // Сохраняем текст вакансии и запускаем премиум
-                    window.__jobSummary = { job_summary: vacancyText, requirements: [] };
-                    runOneShot();
-                }
-                return;
+            // Фокус на первое поле в открытой панели
+            setTimeout(() => {
+                const firstField = document.querySelector(`#panel-${panel} textarea`);
+                if (firstField) firstField.focus();
+            }, 100);
+        }
+        
+        function updatePanelVisibility() {
+            // Скрываем все панели
+            document.querySelectorAll('.form-panel').forEach(panel => {
+                panel.style.display = 'none';
+            });
+            
+            // Показываем нужную панель
+            const activePanel = document.getElementById(`panel-${currentPanel}`);
+            if (activePanel) {
+                activePanel.style.display = 'block';
             }
             
-            // Для остальных действий - фокус на поле резюме
-            if (action === 'ats' || action === 'grade' || action === 'cover') {
-                const resumeTextarea = document.getElementById('resumeText');
-                if (resumeTextarea) {
-                    resumeTextarea.focus();
-                }
+            // Обновляем активную кнопку
+            document.querySelectorAll('.panel-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.querySelector(`[onclick="openPanel('${currentPanel}')"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
             }
             
-            // Для комбо - фокус на поле вакансии, если резюме уже заполнено
-            if (action === 'combo') {
-                const resumeText = document.getElementById('resumeText')?.value?.trim();
-                const jobTextarea = document.getElementById('jobText');
-                if (resumeText && jobTextarea) {
-                    jobTextarea.focus();
-                } else {
-                    const resumeTextarea = document.getElementById('resumeText');
-                    if (resumeTextarea) {
-                        resumeTextarea.focus();
-                    }
+            // Обновляем состояние кнопок запуска
+            updateRunButtons();
+        }
+        
+        // Обновление состояния кнопок запуска
+        function updateRunButtons() {
+            // Комбо
+            const comboResume = document.getElementById('combo-resume')?.value?.trim();
+            const comboJob = document.getElementById('combo-job')?.value?.trim();
+            const comboBtn = document.querySelector('[onclick="runComboFromPanel()"]');
+            if (comboBtn) comboBtn.disabled = !comboResume || !comboJob;
+            
+            // ATS
+            const atsResume = document.getElementById('ats-resume')?.value?.trim();
+            const atsBtn = document.querySelector('[onclick="runAtsFromPanel()"]');
+            if (atsBtn) atsBtn.disabled = !atsResume;
+            
+            // Grade
+            const gradeResume = document.getElementById('grade-resume')?.value?.trim();
+            const gradeBtn = document.querySelector('[onclick="runGradeFromPanel()"]');
+            if (gradeBtn) gradeBtn.disabled = !gradeResume;
+            
+            // Cover
+            const coverResume = document.getElementById('cover-resume')?.value?.trim();
+            const coverJob = document.getElementById('cover-job')?.value?.trim();
+            const coverBtn = document.querySelector('[onclick="runCoverFromPanel()"]');
+            if (coverBtn) coverBtn.disabled = !coverResume || !coverJob;
+            
+            // Premium
+            const premiumResume = document.getElementById('premium-resume')?.value?.trim();
+            const premiumJob = document.getElementById('premium-job')?.value?.trim();
+            const premiumBtn = document.querySelector('[onclick="runPremiumFromPanel()"]');
+            if (premiumBtn) premiumBtn.disabled = !premiumResume || !premiumJob;
+        }
+        
+        // Обработчики файлов для каждой панели
+        async function handleComboFile(event, field) {
+            const file = event.target.files[0];
+            if (file) {
+                try {
+                    const text = await fileToText(file);
+                    document.getElementById(`combo-${field}`).value = text;
+                    updateRunButtons();
+                } catch (e) {
+                    alert('Ошибка чтения файла: ' + e.message);
                 }
             }
+        }
+        
+        async function handleAtsFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                try {
+                    const text = await fileToText(file);
+                    document.getElementById('ats-resume').value = text;
+                    updateRunButtons();
+                } catch (e) {
+                    alert('Ошибка чтения файла: ' + e.message);
+                }
+            }
+        }
+        
+        async function handleGradeFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                try {
+                    const text = await fileToText(file);
+                    document.getElementById('grade-resume').value = text;
+                    updateRunButtons();
+                } catch (e) {
+                    alert('Ошибка чтения файла: ' + e.message);
+                }
+            }
+        }
+        
+        async function handleCoverFile(event, field) {
+            const file = event.target.files[0];
+            if (file) {
+                try {
+                    const text = await fileToText(file);
+                    document.getElementById(`cover-${field}`).value = text;
+                    updateRunButtons();
+                } catch (e) {
+                    alert('Ошибка чтения файла: ' + e.message);
+                }
+            }
+        }
+        
+        async function handlePremiumFile(event, field) {
+            const file = event.target.files[0];
+            if (file) {
+                try {
+                    const text = await fileToText(file);
+                    document.getElementById(`premium-${field}`).value = text;
+                    updateRunButtons();
+                } catch (e) {
+                    alert('Ошибка чтения файла: ' + e.message);
+                }
+            }
+        }
+        
+        // Функция для чтения файлов
+        async function fileToText(file) {
+            if (file.type.startsWith("text/") || /\.txt$|\.md$/i.test(file.name)) {
+                return await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onerror = () => reject(reader.error);
+                    reader.onload = () => resolve(String(reader.result || ""));
+                    reader.readAsText(file, "utf-8");
+                });
+            }
+            // Для docx/pdf — пробрасываем на бэкенд
+            const formData = new FormData();
+            formData.append("file", file);
+            const response = await fetch("/api/parse/docx", { method: "POST", body: formData });
+            if (!response.ok) throw new Error("Не удалось распарсить файл");
+            const data = await response.json();
+            return data.text || "";
+        }
+        
+        // Добавляем слушатели для обновления кнопок при вводе
+        document.addEventListener('DOMContentLoaded', function() {
+            // Слушаем изменения в полях ввода
+            const textareas = document.querySelectorAll('textarea');
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', updateRunButtons);
+            });
+            
+            // Инициализируем панели
+            updatePanelVisibility();
         });
 
         function showAnalysis() {
@@ -1418,6 +1703,66 @@
             } catch (e) { setBlock('res-match','Ошибка premium: ' + e.message); }
         }
 
+        // Функции запуска из панелей
+        async function runComboFromPanel() {
+            try {
+                const resume = document.getElementById('combo-resume')?.value?.trim();
+                const job = document.getElementById('combo-job')?.value?.trim();
+                if (!resume || !job) return setBlock('res-summary','Для комбо нужны резюме и вакансия');
+                
+                const data = await postJSON('/api/combo/summary-match', { resumeText: resume, jobText: job });
+                // Сохраняем для следующих шагов
+                window.__resumeSummary = { resume_summary: data.resume?.resume_summary||'', hard_skills: data.resume?.hard_skills||[] };
+                window.__jobSummary = { job_summary: data.job?.job_summary||'', requirements: data.job?.requirements||[] };
+                setBlock('res-summary',`<b>Выжимка резюме:</b><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span><div class='opacity-80' style='margin-top:6px;'>${data.resume?.resume_summary||''}</div>`);
+                setBlock('res-job',`<b>Вакансия:</b><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span><div class='opacity-80' style='margin-top:6px;'>${data.job?.job_summary||''}</div>`);
+                setBlock('res-match',`<b>Match:</b> ${data.match?.match_percent||'-'}% — сильные: ${(data.match?.highlights||[]).slice(0,3).join(', ')}`);
+            } catch (e) { setBlock('res-summary','Ошибка комбо: ' + e.message); }
+        }
+        
+        async function runAtsFromPanel() {
+            try {
+                const resume = document.getElementById('ats-resume')?.value?.trim();
+                if (!resume) return setBlock('res-ats','Введите текст резюме');
+                const data = await postJSON('/api/resume/ats', { resumeText: resume });
+                setBlock('res-ats',`<b>ATS:</b> ${data.ats_score}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>${(data.issues?.length?`<ul class='list'><li>${data.issues.slice(0,6).join('</li><li>')}</li></ul>`:'')}`);
+            } catch (e) { setBlock('res-ats','Ошибка ATS: ' + e.message); }
+        }
+        
+        async function runGradeFromPanel() {
+            try {
+                const resume = document.getElementById('grade-resume')?.value?.trim();
+                if (!resume) return setBlock('res-grade','Введите текст резюме');
+                const data = await postJSON('/api/resume/grade', { resumeText: resume });
+                setBlock('res-grade',`<b>Грейд:</b> ${data.grade}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`);
+            } catch (e) { setBlock('res-grade','Ошибка грейда: ' + e.message); }
+        }
+        
+        async function runCoverFromPanel() {
+            try {
+                const resume = document.getElementById('cover-resume')?.value?.trim();
+                const job = document.getElementById('cover-job')?.value?.trim();
+                if (!resume || !job) return setBlock('res-cover','Нужны выжимка резюме и описание вакансии');
+                const data = await postJSON('/api/cover-letter', {
+                    resume_summary: resume,
+                    job_summary: job,
+                    tone: 'профессиональный'
+                });
+                setBlock('res-cover',`<b>Сопроводительное:</b><div style='margin-top:6px; white-space:pre-wrap;'>${data.cover_letter}</div><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`);
+            } catch (e) { setBlock('res-cover','Ошибка письма: ' + e.message); }
+        }
+        
+        async function runPremiumFromPanel() {
+            try {
+                const resume = document.getElementById('premium-resume')?.value?.trim();
+                const job = document.getElementById('premium-job')?.value?.trim();
+                if (!resume || !job) return setBlock('res-match','Нужны резюме и вакансия');
+                const data = await postJSON('/api/premium/oneshot', { resumeText: resume, jobText: job });
+                setBlock('res-match',`<b>Premium:</b> match ${data.match?.match_percent ?? '-'}%, grade ${data.resume?.grade ?? '-'}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`);
+            } catch (e) { setBlock('res-match','Ошибка premium: ' + e.message); }
+        }
+        
+        // Старые функции для совместимости (если нужны)
         async function runCombo() {
             try {
                 const txt = getResumeText();
