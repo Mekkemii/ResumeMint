@@ -53,12 +53,7 @@
             opacity: 0.8;
         }
 
-        /* Центровка и ограничение ширины всей страницы с анализом */
-        .page-container { 
-            max-width: 1100px; 
-            margin: 0 auto; 
-            padding: 0 16px; 
-        }
+
 
         /* Основной контент */
         .main-content {
@@ -1135,11 +1130,11 @@
 
     <!-- Основной контент -->
     <main class="main-content">
-        <div class="page-container">
         <!-- Героическая секция -->
         <section class="pt-8 pb-6">
-            <div class="text-center">
-                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">
+            <!-- ВАЖНО: text-center на общем контейнере -->
+            <div class="max-w-[1100px] mx-auto px-4 text-center">
+                <h1 class="text-3xl md:text-4xl font-extrabold">
                     AI ассистент для анализа резюме
                 </h1>
 
@@ -1148,9 +1143,11 @@
                     создавать эффективные резюме.
                 </p>
 
-                <p class="mt-4 text-white/70">Выберите нужную функцию ниже и начните анализ</p>
+                <p class="mt-4 text-white/70">
+                    Выберите нужную функцию ниже и начните анализ
+                </p>
 
-                <!-- ряд кнопок по центру (как было, только justify-center) -->
+                <!-- Ряд кнопок по центру -->
                 <div class="mt-4 flex flex-wrap justify-center gap-3">
                     <button class="hero-btn" onclick="fireAction('compare')">Матчинг вакансии</button>
                     <button class="hero-btn" onclick="fireAction('review')">Оценка резюме</button>
@@ -1158,7 +1155,7 @@
                     <button class="hero-btn premium" onclick="fireAction('premium')">Всё сразу</button>
                 </div>
 
-                <!-- эта кнопка строго по центру с небольшим отступом -->
+                <!-- Кнопка «Как работает сервис» по центру -->
                 <div class="mt-4">
                     <button class="inline-flex items-center rounded-xl px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10" onclick="showModal()">
                         Как работает сервис
@@ -1168,11 +1165,13 @@
         </section>
 
         <!-- Секция анализа резюме -->
-        <section id="analysisSection" class="mt-10 scroll-mt-24">
-            <h2 class="text-center text-3xl md:text-4xl font-extrabold">Анализ резюме</h2>
-            
-            <!-- ряд табов по центру, без «прижатия» кверху -->
-            <div class="mt-4 mb-2 flex flex-wrap justify-center gap-3">
+        <section id="analysisSection" class="mt-10 scroll-mt-24" style="display: none;">
+            <div class="max-w-[1100px] mx-auto px-4">
+                <!-- центрируем заголовок -->
+                <h2 class="text-center text-3xl md:text-4xl font-extrabold">Анализ резюме</h2>
+                
+                <!-- центрируем ряд табов -->
+                <div class="mt-4 mb-2 flex flex-wrap justify-center gap-3 text-center">
                     <button class="panel-btn" onclick="openPanel('compare')">Матчинг вакансии</button>
                     <button class="panel-btn" onclick="openPanel('review')">Оценка резюме</button>
                     <button class="panel-btn" onclick="openPanel('cover')">Сопроводительное</button>
@@ -1427,7 +1426,7 @@
         }
 
         // Система панелей с формами
-        let currentPanel = 'compare';
+        let currentPanel = null;
         
         function openPanel(panel) {
             currentPanel = panel;
@@ -1446,19 +1445,21 @@
                 panel.style.display = 'none';
             });
             
-            // Показываем нужную панель
-            const activePanel = document.getElementById(`panel-${currentPanel}`);
-            if (activePanel) {
-                activePanel.style.display = 'block';
-            }
-            
-            // Обновляем активную кнопку
-            document.querySelectorAll('.panel-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            const activeBtn = document.querySelector(`[onclick="openPanel('${currentPanel}')"]`);
-            if (activeBtn) {
-                activeBtn.classList.add('active');
+            // Показываем нужную панель только если выбрана
+            if (currentPanel) {
+                const activePanel = document.getElementById(`panel-${currentPanel}`);
+                if (activePanel) {
+                    activePanel.style.display = 'block';
+                }
+                
+                // Обновляем активную кнопку
+                document.querySelectorAll('.panel-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                const activeBtn = document.querySelector(`[onclick="openPanel('${currentPanel}')"]`);
+                if (activeBtn) {
+                    activeBtn.classList.add('active');
+                }
             }
             
             // Обновляем состояние кнопок запуска
@@ -1573,9 +1574,8 @@
                 textarea.addEventListener('input', updateRunButtons);
             });
             
-            // Инициализируем панели - по умолчанию показываем compare
-            currentPanel = 'compare';
-            updatePanelVisibility();
+            // По умолчанию ничего не показываем - панели скрыты
+            // Они появятся только после клика на кнопку в герое
         });
 
         function showAnalysis() {
@@ -1852,7 +1852,6 @@
 
         // Legacy functions removed - no longer needed
     </script>
-        </div>
     </main>
 </body>
 </html>
