@@ -586,92 +586,11 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
-        .file-upload {
-            border: 2px dashed #d1d5db;
-            border-radius: 6px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color 0.3s;
-        }
+        /* Legacy file upload styles removed - replaced by panel-based file inputs */
 
-        .file-upload:hover {
-            border-color: #3b82f6;
-        }
+        /* Legacy button styles removed - replaced by panel-based buttons */
 
-        .file-upload.dragover {
-            border-color: #3b82f6;
-            background-color: #f0f9ff;
-        }
-
-        .file-info {
-            margin-top: 15px;
-            padding: 15px;
-            background-color: #f8fafc;
-            border-radius: 6px;
-            display: none;
-            position: relative;
-        }
-
-        .file-info-content {
-            margin-right: 30px;
-        }
-
-        .file-remove-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .file-remove-btn:hover {
-            background: #dc2626;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background-color: #3b82f6;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #2563eb;
-        }
-
-        .btn-secondary {
-            background-color: #f3f4f6;
-            color: #374151;
-            border: 1px solid #d1d5db;
-        }
-
-        .btn-secondary:hover {
-            background-color: #e5e7eb;
-        }
+        /* Legacy button styles removed - replaced by panel-based buttons */
 
         .loading {
             display: none;
@@ -1436,7 +1355,7 @@
     </div>
 
     <script>
-        let selectedFile = null;
+        // Legacy selectedFile variable removed - no longer needed
 
         // Hero Actions - открытие панелей форм
         function fireAction(action) {
@@ -1698,49 +1617,7 @@
             }
         }
 
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                selectedFile = file;
-                showFileInfo(file);
-                document.getElementById('clearFileBtn').style.display = 'block';
-            }
-        }
-
-        function handleDrop(event) {
-            event.preventDefault();
-            const file = event.dataTransfer.files[0];
-            if (file) {
-                selectedFile = file;
-                document.getElementById('fileInput').files = event.dataTransfer.files;
-                showFileInfo(file);
-                document.getElementById('clearFileBtn').style.display = 'block';
-            }
-            document.querySelector('.file-upload').classList.remove('dragover');
-        }
-
-        function handleDragOver(event) {
-            event.preventDefault();
-            document.querySelector('.file-upload').classList.add('dragover');
-        }
-
-        function handleDragLeave(event) {
-            event.preventDefault();
-            document.querySelector('.file-upload').classList.remove('dragover');
-        }
-
-        function showFileInfo(file) {
-            const fileInfo = document.getElementById('fileInfo');
-            const fileInfoContent = fileInfo.querySelector('.file-info-content');
-            
-            fileInfo.style.display = 'block';
-            
-            fileInfoContent.innerHTML = `
-                <strong>Выбран файл:</strong> ${file.name}<br>
-                <strong>Размер:</strong> ${(file.size / 1024).toFixed(1)} KB<br>
-                <strong>Тип:</strong> ${file.type || 'Неизвестно'}
-            `;
-        }
+        // Legacy file handling functions removed - replaced by panel-based file inputs
 
         // ===== Checks Bar logic (calls backend endpoints) =====
         function setBlock(id, html) {
@@ -1758,52 +1635,11 @@
             return r.json();
         }
 
-        function getResumeText() {
-            return document.getElementById('resumeText').value.trim();
-        }
+        // Legacy getResumeText function removed - no longer needed
 
-        async function runAts() {
-            try {
-                const txt = getResumeText();
-                if (!txt) return setBlock('res-ats','<b>ATS:</b> введите текст резюме');
-                const data = await postJSON('/api/resume/ats', { resumeText: txt });
-                setBlock('res-ats',`<b>ATS:</b> ${data.ats_score}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>${(data.issues?.length?`<ul class='list'><li>${data.issues.slice(0,6).join('</li><li>')}</li></ul>`:'')}`);
-            } catch (e) { setBlock('res-ats','Ошибка ATS: ' + e.message); }
-        }
+        // Legacy runAts and runGrade functions removed - replaced by panel-based functions
 
-        async function runGrade() {
-            try {
-                const txt = getResumeText();
-                if (!txt) return setBlock('res-grade','<b>Грейд:</b> нет текста резюме');
-                const data = await postJSON('/api/resume/grade', { resumeText: txt });
-                setBlock('res-grade',`<b>Грейд:</b> ${data.grade}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`);
-            } catch (e) { setBlock('res-grade','Ошибка грейда: ' + e.message); }
-        }
-
-        // Удалены отдельные шаги выжимки/вакансии/сопоставления — их делает Комбо
-
-        async function runCover() {
-            try {
-                const r = window.__resumeSummary; const j = window.__jobSummary;
-                if (!r || !j) return setBlock('res-cover','Сначала выжимка резюме и разбор вакансии');
-                const data = await postJSON('/api/cover-letter', {
-                    resume_summary: r.resume_summary,
-                    job_summary: j.job_summary,
-                    tone: 'профессиональный'
-                });
-                setBlock('res-cover',`<b>Сопроводительное:</b><div style='margin-top:6px; white-space:pre-wrap;'>${data.cover_letter}</div><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`);
-            } catch (e) { setBlock('res-cover','Ошибка письма: ' + e.message); }
-        }
-
-        async function runOneShot() {
-            try {
-                const txt = getResumeText();
-                const j = document.getElementById('jobText')?.value?.trim() || prompt('Вставьте текст вакансии для премиум-анализа:') || '';
-                if (!txt || !j) return setBlock('res-match','Нужны резюме и вакансия');
-                const data = await postJSON('/api/premium/oneshot', { resumeText: txt, jobText: j });
-                setBlock('res-match',`<b>Premium:</b> match ${data.match?.match_percent ?? '-'}%, grade ${data.resume?.grade ?? '-'}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`);
-            } catch (e) { setBlock('res-match','Ошибка premium: ' + e.message); }
-        }
+        // Legacy runCover and runOneShot functions removed - replaced by panel-based functions
 
         // Функции запуска из панелей
         async function runReviewFromPanel() {
@@ -1962,14 +1798,7 @@
             error.style.display = 'block';
         }
 
-        // Legacy loadSample function removed - no longer needed
-        
-        function clearFile() {
-            document.getElementById('fileInput').value = '';
-            document.getElementById('fileInfo').style.display = 'none';
-            document.getElementById('clearFileBtn').style.display = 'none';
-            selectedFile = null;
-        }
+        // Legacy functions removed - no longer needed
     </script>
 </body>
 </html>
