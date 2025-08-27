@@ -726,6 +726,101 @@
 
         .icon-search::before { content: "🔍"; }
         .icon-arrow-down::before { content: "↓"; }
+        
+        /* ===== Dark Purple Theme: Tokens */
+        :root {
+            --bg: #0b0b10;
+            --bg-elev: #11111a;
+            --surface: #161622;
+            --surface-2: #1e1e2b;
+            --border: #2a2a3c;
+
+            --text: #e7e6f2;
+            --text-2: #c7c5d8;
+            --text-3: #9d9bb3;
+            --text-inverse: #0a0613;
+
+            --purple-300: #a78bfa;
+            --purple-400: #8b5cf6;
+            --purple-500: #6e2ed6;
+            --purple-600: #51219f;
+
+            --primary: var(--purple-400);
+            --primary-strong: var(--purple-500);
+            --primary-weak: var(--purple-300);
+            --on-primary: #fafaff;
+
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+
+            --ring: rgba(139, 92, 246, 0.55);
+            --shadow-1: 0 10px 30px rgba(139, 92, 246, 0.18);
+            --shadow-2: 0 16px 40px rgba(20, 11, 46, 0.55);
+
+            --grad-primary: linear-gradient(135deg, var(--purple-500) 0%, var(--purple-400) 55%, var(--purple-300) 100%);
+        }
+
+        /* ===== Dark Purple Theme: Base overrides ===== */
+        body {
+            background: radial-gradient(80vw 80vh at 80% -10%, rgba(139,92,246,0.10), transparent 60%), var(--bg);
+            color: var(--text);
+        }
+
+        a { color: var(--primary); }
+
+        .main-nav {
+            background: linear-gradient(0deg, rgba(26,26,43,0.7), rgba(26,26,43,0.7)), var(--bg-elev);
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow-2);
+        }
+        .main-nav .nav-link { color: var(--text); }
+        .main-nav .nav-link:hover { color: var(--primary); }
+        .logo { color: var(--on-primary); }
+
+        /* Hero */
+        .hero-title { color: var(--text); }
+        .hero-subtitle, .hero-description { color: var(--text-2); }
+
+        /* Buttons */
+        .btn { border: 1px solid transparent; }
+        .btn-primary {
+            background: var(--grad-primary);
+            color: var(--on-primary);
+            box-shadow: var(--shadow-1);
+        }
+        .btn-primary:hover { filter: brightness(1.05); }
+        .btn-secondary {
+            background: transparent;
+            border-color: var(--border);
+            color: var(--text);
+        }
+        .btn-secondary:hover { background: rgba(139,92,246,0.06); border-color: var(--purple-600); }
+
+        /* Forms and cards */
+        .analysis-section { background: transparent; }
+        .form-container, .results > div, .results-grid > div, .modal-content {
+            background: linear-gradient(0deg, rgba(43,43,58,0.25), rgba(43,43,58,0.25)), var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        textarea, .file-upload, .file-info {
+            background: var(--surface-2);
+            border-color: var(--border);
+            color: var(--text);
+        }
+        textarea:focus { box-shadow: 0 0 0 3px var(--ring); border-color: var(--primary-strong); }
+        .file-upload:hover { border-color: var(--primary); }
+
+        /* Results accent colors */
+        #level { color: var(--primary) !important; }
+        #score { color: var(--primary) !important; }
+        #skills { color: var(--success) !important; }
+        #recommendations { color: var(--text-3) !important; }
+
+        /* QR/Contacts button link */
+        .telegram-link { background: var(--grad-primary); color: var(--on-primary); box-shadow: var(--shadow-1); }
+        .telegram-link:hover { filter: brightness(1.05); }
     </style>
 </head>
 <body>
