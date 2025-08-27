@@ -6,6 +6,7 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
+const mammoth = require('mammoth');
 const path = require('path');
 const fs = require('fs').promises;
 const OpenAI = require('openai');
@@ -79,6 +80,9 @@ const upload = multer({
     files: 1
   }
 });
+
+// Memory upload for quick .docx parsing
+const uploadMemory = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1 } });
 
 // Простая функция для извлечения текста из файла
 async function extractTextFromFile(file) {
@@ -834,6 +838,17 @@ app.post('/api/premium/oneshot', async (req, res) => {
     const out = { ...json, usage };
     setCached(cacheKey, out);
     res.json(out);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Parse .docx to text (for accordion uploads)
+app.post('/api/parse/docx', uploadMemory.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'no file' });
+    const { value } = await mammoth.extractRawText({ buffer: req.file.buffer });
+    res.json({ text: (value || '').trim() });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
