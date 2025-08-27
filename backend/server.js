@@ -207,19 +207,44 @@ ${resumeText}${additionalInfo}
     });
 
     const response = completion.choices[0].message.content;
-    
-    // Пытаемся извлечь JSON из ответа
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
+
+    // Пытаемся извлечь JSON из ответа (удаляем и ограждающие ```)
+    let cleanedResponse = response;
+    let jsonData = null;
+
+    // Сначала ищем fenced-блок ```json ... ```
+    const codeBlockMatch = response.match(/```json[\s\S]*?```/i);
+    if (codeBlockMatch) {
+      const jsonInside = codeBlockMatch[0]
+        .replace(/```json/i, '')
+        .replace(/```/, '')
+        .trim();
       try {
-        const jsonData = JSON.parse(jsonMatch[0]);
-        return {
-          ...jsonData,
-          detailedAnalysis: response.replace(jsonMatch[0], '').trim()
-        };
+        jsonData = JSON.parse(jsonInside);
+        cleanedResponse = response.replace(codeBlockMatch[0], '').trim();
       } catch (e) {
-        console.error('Ошибка парсинга JSON:', e);
+        console.error('Ошибка парсинга JSON из fenced-блока:', e);
       }
+    }
+
+    if (!jsonData) {
+      // Фолбек: ищем первую JSON-структуру по фигурным скобкам
+      const braceMatch = response.match(/\{[\s\S]*\}/);
+      if (braceMatch) {
+        try {
+          jsonData = JSON.parse(braceMatch[0]);
+          cleanedResponse = response.replace(braceMatch[0], '').trim();
+        } catch (e) {
+          console.error('Ошибка парсинга JSON:', e);
+        }
+      }
+    }
+
+    if (jsonData) {
+      return {
+        ...jsonData,
+        detailedAnalysis: cleanedResponse
+      };
     }
     
     // Если JSON не найден, возвращаем базовый анализ
