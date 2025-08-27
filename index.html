@@ -735,9 +735,9 @@
             --surface-2: #1e1e2b;
             --border: #2a2a3c;
 
-            --text: #e7e6f2;
-            --text-2: #c7c5d8;
-            --text-3: #9d9bb3;
+            --text: #f1f0ff;
+            --text-2: #d8d6ea;
+            --text-3: #b2afc8;
             --text-inverse: #0a0613;
 
             --purple-300: #a78bfa;
@@ -765,6 +765,10 @@
         body {
             background: radial-gradient(80vw 80vh at 80% -10%, rgba(139,92,246,0.10), transparent 60%), var(--bg);
             color: var(--text);
+            color-scheme: dark;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         a { color: var(--primary); }
@@ -819,6 +823,7 @@
             border-color: var(--border);
             color: var(--text);
         }
+        textarea::placeholder { color: var(--text-3); }
         textarea:focus { box-shadow: 0 0 0 3px var(--ring); border-color: var(--primary-strong); }
         .file-upload:hover { border-color: var(--primary); }
 
@@ -831,6 +836,13 @@
         /* QR/Contacts button link */
         .telegram-link { background: var(--grad-primary); color: var(--on-primary); box-shadow: var(--shadow-1); }
         .telegram-link:hover { filter: brightness(1.05); }
+
+        /* Modal typography on dark */
+        .modal h2 { color: var(--text); }
+        .modal p { color: var(--text-2); }
+        .modal li { color: var(--text-2); }
+        .github-link { background: var(--grad-primary); color: var(--on-primary); }
+        .github-link:hover { filter: brightness(1.05); }
     </style>
 </head>
 <body>
