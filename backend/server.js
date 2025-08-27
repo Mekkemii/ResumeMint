@@ -164,6 +164,47 @@ function userCombo(resumeText, jobText) {
   return `ЗАДАЧА:\n1) Выжимка резюме: кратко (<=800 символов) и до 12 hard_skills.\n2) Разбор вакансии: requirements (5–12 пунктов) и job_summary (<=600).\n3) Сопоставление: match_percent (0–100), highlights, gaps, explanation (<=300).\nФОРМАТ:\n{\n  "resume": { "resume_summary": "<=800", "hard_skills": [] },\n  "job": { "requirements": [], "job_summary": "<=600" },\n  "match": { "match_percent": 0, "highlights": [], "gaps": [], "explanation": "" }\n}\n\nРЕЗЮМЕ:\n${resumeText}\n\nВАКАНСИЯ:\n${jobText}`;
 }
 
+// ===== МАТЧИНГ ВАКАНСИИ (JD-анализ + требуемый грейд + сопоставление) =====
+function sysJobCompare() { return 'Ты — карьерный ассистент и рекрутер. Отвечай ТОЛЬКО валидным JSON.'; }
+function userJobCompare(resumeText, jobText) {
+  return `ЗАДАЧА:
+1) Разбери вакансию (JD): краткое summary, "requirements" (5–12), "nice_to_have" (0–8).
+2) Определи требуемый грейд по JD: job_grade.level (Junior|Middle|Senior|Lead) + краткое rationale (<=300).
+3) Сопоставь JD и резюме:
+   - match_percent (0–100),
+   - grade_fit: "ниже" | "соответствие" | "выше" (уровень кандидата относительно требуемого),
+   - chances: "High" | "Medium" | "Low",
+   - highlights[], gaps[],
+   - mapping[] — построчный мэппинг требований JD на факты из резюме:
+     [{ "requirement":"...", "evidence":"...", "status":"full|partial|miss", "comment":"кратко" }].
+
+ФОРМАТ (строго JSON):
+{
+  "job": {
+    "job_summary": "<=600",
+    "requirements": ["..."],
+    "nice_to_have": ["..."],
+    "job_grade": { "level": "Junior|Middle|Senior|Lead", "rationale": "<=300" }
+  },
+  "match": {
+    "match_percent": 0,
+    "grade_fit": "ниже|соответствие|выше",
+    "chances": "High|Medium|Low",
+    "highlights": ["..."],
+    "gaps": ["..."],
+    "mapping": [
+      { "requirement":"...", "evidence":"...", "status":"full|partial|miss", "comment":"..." }
+    ]
+  }
+}
+
+РЕЗЮМЕ (сырой текст или краткая выжимка):
+${resumeText}
+
+ВАКАНСИЯ (JD):
+${jobText}`;
+}
+
 // ===== ATS / Grade short prompts =====
 function sysAts() { return 'Ты — эксперт по ATS. Верни только JSON.'; }
 function userAts(resumeText) {
@@ -835,6 +876,28 @@ app.post('/api/job/analyze', async (req, res) => {
       { role: 'system', content: sysJobAnalyze() },
       { role: 'user', content: userJobAnalyze(text) }
     ], { max_tokens: 800, temperature: 0.2 });
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/job/compare', async (req, res) => {
+  try {
+    const { resumeText, jobText } = req.body;
+    if (!resumeText || !jobText) return res.status(400).json({ error: 'Нужны resumeText и jobText' });
+    const resumeT = smartTrim(resumeText, 8000);
+    const jobT = smartTrim(jobText, 8000);
+    const cacheKey = `compare:${resumeT}:${jobT}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+
+    const { json, usage } = await chatJson([
+      { role: 'system', content: sysJobCompare() },
+      { role: 'user', content: userJobCompare(resumeT, jobT) }
+    ], { max_tokens: 1100, temperature: 0.2 });
     const out = { ...json, usage };
     setCached(cacheKey, out);
     res.json(out);
