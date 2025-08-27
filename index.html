@@ -1023,6 +1023,69 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
+        /* Стили для результатов оценки резюме */
+        .review-result {
+            color: var(--text-2);
+        }
+        .review-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .grade-rationale {
+            font-size: 13px;
+            opacity: 0.8;
+            font-style: italic;
+        }
+        .review-scores {
+            font-size: 13px;
+            opacity: 0.8;
+            margin-bottom: 12px;
+        }
+        .review-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .review-section {
+            font-size: 13px;
+        }
+        .review-section b {
+            color: var(--text);
+            display: block;
+            margin-bottom: 6px;
+        }
+        .review-list {
+            list-style: disc;
+            margin-left: 16px;
+            margin-top: 4px;
+        }
+        .review-list li {
+            margin-bottom: 3px;
+            font-size: 12px;
+        }
+        .review-ats {
+            font-size: 13px;
+            opacity: 0.8;
+            margin-bottom: 12px;
+            padding: 8px;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 6px;
+        }
+        .review-questions {
+            font-size: 13px;
+        }
+        .review-questions b {
+            color: var(--text);
+            display: block;
+            margin-bottom: 6px;
+        }
+
         .checks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 12px; }
         .check-card { background: linear-gradient(0deg, rgba(43,43,58,0.25), rgba(43,43,58,0.25)), var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; color: var(--text-2); }
         .token-badge { font-size: 12px; opacity: .8; margin-left: 6px; }
@@ -1078,6 +1141,7 @@
             <div class="cta-buttons">
                 <!-- Hero Actions Panel -->
                 <div class="hero-actions">
+                    <button class="hero-btn" onclick="fireAction('review')">Оценка резюме</button>
                     <button class="hero-btn" onclick="fireAction('combo')">Комбо (выжимка+JD+сопоставить)</button>
                     <button class="hero-btn" onclick="fireAction('ats')">ATS-проверка</button>
                     <button class="hero-btn" onclick="fireAction('grade')">Определить грейд</button>
@@ -1096,6 +1160,7 @@
                 <div class="form-container">
                     <!-- Панель переключения -->
                     <div class="panel-switcher">
+                        <button class="panel-btn" onclick="openPanel('review')">Оценка резюме</button>
                         <button class="panel-btn" onclick="openPanel('combo')">Комбо (выжимка+JD+сопоставить)</button>
                         <button class="panel-btn" onclick="openPanel('ats')">ATS-проверка</button>
                         <button class="panel-btn" onclick="openPanel('grade')">Определить грейд</button>
@@ -1103,8 +1168,26 @@
                         <button class="panel-btn" onclick="openPanel('premium')">Всё сразу (Premium)</button>
                     </div>
 
+                    <!-- Панель Оценка резюме -->
+                    <div id="panel-review" class="form-panel" style="display: block;">
+                        <div class="panel-header">
+                            <h3>Оценка резюме (HR + грейд)</h3>
+                            <p class="panel-hint">Структура, качество текста, сильные/слабые стороны и грейд с обоснованием</p>
+                        </div>
+                        <div class="panel-content">
+                            <div class="form-group">
+                                <label>Текст резюме:</label>
+                                <textarea id="review-resume" placeholder="Вставьте текст резюме..."></textarea>
+                                <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleReviewFile(event)" class="file-input">
+                            </div>
+                            <div class="panel-actions">
+                                <button class="run-btn" onclick="runReviewFromPanel()" disabled>Запустить оценку резюме</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Панель Комбо -->
-                    <div id="panel-combo" class="form-panel">
+                    <div id="panel-combo" class="form-panel" style="display: none;">
                         <div class="panel-header">
                             <h3>Комбо: выжимка резюме + разбор вакансии + сопоставление</h3>
                             <p class="panel-hint">Вставьте резюме и вакансию для комплексного анализа</p>
@@ -1216,6 +1299,7 @@
 
                     <!-- Результаты по ключам (без накопления) -->
                     <div id="checksResults" class="checks-grid">
+                        <div id="res-review" class="check-card" style="grid-column: 1/-1;"></div>
                         <div id="res-ats" class="check-card"></div>
                         <div id="res-grade" class="check-card"></div>
                         <div id="res-summary" class="check-card"></div>
@@ -1367,7 +1451,7 @@
         }
 
         // Система панелей с формами
-        let currentPanel = 'combo';
+        let currentPanel = 'review';
         
         function openPanel(panel) {
             currentPanel = panel;
@@ -1407,6 +1491,11 @@
         
         // Обновление состояния кнопок запуска
         function updateRunButtons() {
+            // Review
+            const reviewResume = document.getElementById('review-resume')?.value?.trim();
+            const reviewBtn = document.querySelector('[onclick="runReviewFromPanel()"]');
+            if (reviewBtn) reviewBtn.disabled = !reviewResume;
+            
             // Комбо
             const comboResume = document.getElementById('combo-resume')?.value?.trim();
             const comboJob = document.getElementById('combo-job')?.value?.trim();
@@ -1437,6 +1526,19 @@
         }
         
         // Обработчики файлов для каждой панели
+        async function handleReviewFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                try {
+                    const text = await fileToText(file);
+                    document.getElementById('review-resume').value = text;
+                    updateRunButtons();
+                } catch (e) {
+                    alert('Ошибка чтения файла: ' + e.message);
+                }
+            }
+        }
+        
         async function handleComboFile(event, field) {
             const file = event.target.files[0];
             if (file) {
@@ -1704,6 +1806,79 @@
         }
 
         // Функции запуска из панелей
+        async function runReviewFromPanel() {
+            try {
+                const resume = document.getElementById('review-resume')?.value?.trim();
+                if (!resume) return setBlock('res-review','Введите текст резюме');
+                
+                const data = await postJSON('/api/resume/review', { resumeText: resume });
+                
+                // Формируем HTML для вывода результата
+                let html = `<div class="review-result">`;
+                html += `<div class="review-header">`;
+                html += `<div><b>Грейд:</b> ${data.grade?.level || 'Не определен'}</div>`;
+                html += `<div class="grade-rationale">${data.grade?.rationale || ''}</div>`;
+                html += `<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`;
+                html += `</div>`;
+                
+                html += `<div class="review-scores">`;
+                html += `Оценки: текст ${data.scores?.writing || 0}/100, структура ${data.scores?.structure || 0}/100, общая ${data.scores?.overall || 0}/100`;
+                html += `</div>`;
+                
+                html += `<div class="review-grid">`;
+                
+                if (data.strengths?.length > 0) {
+                    html += `<div class="review-section"><b>Сильные стороны:</b><ul class="review-list">`;
+                    data.strengths.forEach(strength => {
+                        html += `<li>${strength}</li>`;
+                    });
+                    html += `</ul></div>`;
+                }
+                
+                if (data.issues?.length > 0) {
+                    html += `<div class="review-section"><b>Недочёты:</b><ul class="review-list">`;
+                    data.issues.forEach(issue => {
+                        html += `<li>${issue}</li>`;
+                    });
+                    html += `</ul></div>`;
+                }
+                
+                if (data.add?.length > 0) {
+                    html += `<div class="review-section"><b>Что добавить:</b><ul class="review-list">`;
+                    data.add.forEach(item => {
+                        html += `<li>${item}</li>`;
+                    });
+                    html += `</ul></div>`;
+                }
+                
+                html += `</div>`;
+                
+                if (data.ats?.ats_score !== undefined) {
+                    html += `<div class="review-ats">`;
+                    html += `<b>ATS (срез):</b> ${data.ats.ats_score}/100`;
+                    if (data.ats.issues?.length > 0) {
+                        html += ` · ${data.ats.issues.slice(0, 5).join("; ")}`;
+                    }
+                    html += `</div>`;
+                }
+                
+                if (data.questions?.length > 0) {
+                    html += `<div class="review-questions">`;
+                    html += `<b>Вопросы для уточнения:</b><ul class="review-list">`;
+                    data.questions.forEach(question => {
+                        html += `<li>${question}</li>`;
+                    });
+                    html += `</ul></div>`;
+                }
+                
+                html += `</div>`;
+                
+                setBlock('res-review', html);
+            } catch (e) { 
+                setBlock('res-review','Ошибка оценки резюме: ' + e.message); 
+            }
+        }
+        
         async function runComboFromPanel() {
             try {
                 const resume = document.getElementById('combo-resume')?.value?.trim();
