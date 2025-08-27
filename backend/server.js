@@ -120,9 +120,9 @@ async function chatJson(messages, options = {}) {
     if (m) candidate = m[0];
   }
   try {
-    return JSON.parse(candidate);
+    return { json: JSON.parse(candidate), usage: completion.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } };
   } catch (_) {
-    return { _raw: raw };
+    return { json: { _raw: raw }, usage: completion.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } };
   }
 }
 
@@ -152,6 +152,39 @@ function userCover(resumeSummary, jobSummary, tone) {
 function sysPremium() { return 'Ты — эксперт по резюме/ATS/матчингу. ТОЛЬКО ОДИН JSON.'; }
 function userPremium(resumeText, jobText) {
   return `Сделай: (1) резюме {ats_score, issues, grade, resume_summary, hard_skills, soft_skills}; (2) вакансия {job_grade, requirements, nice_to_have, job_summary}; (3) match {match_percent, gaps, highlights, explanation}; (4) cover_letter (110-160 слов). Верни один JSON по схеме.\nРЕЗЮМЕ:\n${resumeText}\nВАКАНСИЯ:\n${jobText}`;
+}
+
+// ===== ATS / Grade short prompts =====
+function sysAts() { return 'Ты — эксперт по ATS. Верни только JSON.'; }
+function userAts(resumeText) {
+  return `Проверь резюме под ATS. ФОРМАТ: { "ats_score": 0-100, "issues": ["..."] }\nРЕЗЮМЕ:\n${resumeText}`;
+}
+function sysGrade() { return 'Ты — эксперт по грейдам. Верни только JSON.'; }
+function userGrade(resumeText) {
+  return `Определи грейд кандидата (Junior|Middle|Senior|Lead) по опыту/навыкам/самостоятельности. ФОРМАТ: { "grade": "Junior|Middle|Senior|Lead" }\nРЕЗЮМЕ:\n${resumeText}`;
+}
+
+// ===== Helpers: smart trim and simple cache (15m) =====
+function smartTrim(text, limit = 8000) {
+  if (!text) return '';
+  let s = String(text)
+    .replace(/\r/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  if (s.length > limit) s = s.slice(0, limit) + '…';
+  return s;
+}
+const _cache = new Map();
+const TTL_MS = 15 * 60 * 1000;
+function setCached(key, payload) { _cache.set(key, { payload, exp: Date.now() + TTL_MS }); }
+function getCached(key) {
+  const rec = _cache.get(key);
+  if (rec && rec.exp > Date.now()) return rec.payload;
+  if (rec) _cache.delete(key);
+  return null;
 }
 
 // Функция AI анализа с использованием OpenAI
@@ -704,11 +737,18 @@ app.post('/api/resume/analyze', async (req, res) => {
     if (!resumeText || resumeText.trim().length < 10) {
       return res.status(400).json({ error: 'Нужно передать текст резюме' });
     }
-    const data = await chatJson([
+    const text = smartTrim(resumeText.trim());
+    const cacheKey = `resume_full:${text}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+
+    const { json, usage } = await chatJson([
       { role: 'system', content: sysResumeAnalyze() },
-      { role: 'user', content: userResumeAnalyze(resumeText.trim()) }
+      { role: 'user', content: userResumeAnalyze(text) }
     ], { max_tokens: 900, temperature: 0.2 });
-    res.json(data);
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -720,11 +760,18 @@ app.post('/api/job/analyze', async (req, res) => {
     if (!jobText || jobText.trim().length < 10) {
       return res.status(400).json({ error: 'Нужно передать текст вакансии' });
     }
-    const data = await chatJson([
+    const text = smartTrim(jobText.trim(), 6000);
+    const cacheKey = `job:${text}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+
+    const { json, usage } = await chatJson([
       { role: 'system', content: sysJobAnalyze() },
-      { role: 'user', content: userJobAnalyze(jobText.trim()) }
+      { role: 'user', content: userJobAnalyze(text) }
     ], { max_tokens: 800, temperature: 0.2 });
-    res.json(data);
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -734,11 +781,17 @@ app.post('/api/match', async (req, res) => {
   try {
     const { resume_summary, job_summary, hard_skills = [], requirements = [] } = req.body;
     if (!resume_summary || !job_summary) return res.status(400).json({ error: 'Нужны summaries резюме и вакансии' });
-    const data = await chatJson([
+    const cacheKey = `match:${resume_summary}:${job_summary}:${JSON.stringify(hard_skills)}:${JSON.stringify(requirements)}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+
+    const { json, usage } = await chatJson([
       { role: 'system', content: sysMatch() },
       { role: 'user', content: userMatch(resume_summary, job_summary, hard_skills, requirements) }
     ], { max_tokens: 500, temperature: 0.2 });
-    res.json(data);
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -748,11 +801,17 @@ app.post('/api/cover-letter', async (req, res) => {
   try {
     const { resume_summary, job_summary, tone } = req.body;
     if (!resume_summary || !job_summary) return res.status(400).json({ error: 'Нужны summaries резюме и вакансии' });
-    const data = await chatJson([
+    const cacheKey = `cover:${resume_summary}:${job_summary}:${tone || ''}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+
+    const { json, usage } = await chatJson([
       { role: 'system', content: sysCover() },
       { role: 'user', content: userCover(resume_summary, job_summary, tone) }
     ], { max_tokens: 420, temperature: 0.25 });
-    res.json(data);
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -762,14 +821,60 @@ app.post('/api/premium/oneshot', async (req, res) => {
   try {
     const { resumeText, jobText } = req.body;
     if (!resumeText || !jobText) return res.status(400).json({ error: 'Нужны resumeText и jobText' });
-    const data = await chatJson([
+    const resumeT = smartTrim(resumeText, 9000);
+    const jobT = smartTrim(jobText, 9000);
+    const cacheKey = `oneshot:${resumeT}:${jobT}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+
+    const { json, usage } = await chatJson([
       { role: 'system', content: sysPremium() },
-      { role: 'user', content: userPremium(resumeText, jobText) }
+      { role: 'user', content: userPremium(resumeT, jobT) }
     ], { max_tokens: 1600, temperature: 0.25 });
-    res.json(data);
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+// Short & cheap: ATS only
+app.post('/api/resume/ats', async (req, res) => {
+  try {
+    const { resumeText } = req.body;
+    const text = smartTrim(resumeText || '');
+    if (!text) return res.status(400).json({ error: 'Нужно передать текст резюме' });
+    const cacheKey = `ats:${text}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+    const { json, usage } = await chatJson([
+      { role: 'system', content: sysAts() },
+      { role: 'user', content: userAts(text) }
+    ], { max_tokens: 220, temperature: 0.2 });
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Short & cheap: Grade only
+app.post('/api/resume/grade', async (req, res) => {
+  try {
+    const { resumeText } = req.body;
+    const text = smartTrim(resumeText || '');
+    if (!text) return res.status(400).json({ error: 'Нужно передать текст резюме' });
+    const cacheKey = `grade:${text}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+    const { json, usage } = await chatJson([
+      { role: 'system', content: sysGrade() },
+      { role: 'user', content: userGrade(text) }
+    ], { max_tokens: 140, temperature: 0.2 });
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // Health check
