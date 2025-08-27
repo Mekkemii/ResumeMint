@@ -174,6 +174,62 @@ function userGrade(resumeText) {
   return `Определи грейд кандидата (Junior|Middle|Senior|Lead) по опыту/навыкам/самостоятельности. ФОРМАТ: { "grade": "Junior|Middle|Senior|Lead" }\nРЕЗЮМЕ:\n${resumeText}`;
 }
 
+// ===== CONDENSE RESUME (экстрактивная ужимка) =====
+function sysCondenseResume() { return 'Ты — парсер резюме. Извлекай факты без интерпретаций. Возвращай ТОЛЬКО валидный JSON.'; }
+function userCondenseResume(resumeText) {
+  return `Нормализуй резюме. НЕ придумывай — используй точные слова из резюме
+(тех стэк, аббревиатуры, названия компаний, цифры, метрики).
+
+ФОРМАТ:
+{
+  "headline": "позиционирование (<=120)",
+  "years_total": number,
+  "experience": [
+    {
+      "company": "…",
+      "role": "…",
+      "start": "YYYY-MM",
+      "end": "YYYY-MM|Present",
+      "domain": "fintech|ecom|…",
+      "stack": ["Python","SQL","KYC","AML", "..."],
+      "highlights": ["достижения с цифрами (экстрактивно)"]
+    }
+  ],
+  "skills": { "hard": ["SQL","Python"], "soft": ["Коммуникация"] },
+  "education": [{ "degree":"…", "org":"…", "year": 2020 }],
+  "languages": ["EN B2","RU C2"],
+  "links": ["github.com/...","linkedin.com/in/..."]
+}
+
+РЕЗЮМЕ:
+${resumeText}`;
+}
+
+// ===== ОЦЕНКА РЕЗЮМЕ (HR + Grade + ATS) =====
+function sysResumeReview() { return 'Ты — эксперт по резюме, ATS и грейдам. Отвечай ТОЛЬКО валидным JSON.'; }
+function userResumeReview(reviewInput) {
+  return `ЗАДАЧА:
+1) Оцени качество и структуру резюме (кратко).
+2) Определи грейд кандидата и обоснуй.
+3) Дай ATS-срез: общий балл и главные проблемы (3–7).
+4) Сформируй списки: strengths (сильные), issues (недочёты), add (что добавить).
+5) Дай 3–6 уточняющих вопросов.
+
+ФОРМАТ (строго JSON):
+{
+  "grade": { "level": "Junior|Middle|Senior|Lead", "rationale": "<=300" },
+  "scores": { "writing": 0-100, "structure": 0-100, "overall": 0-100 },
+  "ats": { "ats_score": 0-100, "issues": ["..."] },
+  "strengths": ["..."],
+  "issues": ["..."],
+  "add": ["..."],
+  "questions": ["..."]
+}
+
+ВХОДНЫЕ ДАННЫЕ (компактное резюме или сырой текст):
+${reviewInput}`;
+}
+
 // ===== Helpers: smart trim and simple cache (15m) =====
 function smartTrim(text, limit = 8000) {
   if (!text) return '';
@@ -912,6 +968,78 @@ app.post('/api/combo/summary-match', async (req, res) => {
       { role: 'system', content: sysCombo() },
       { role: 'user', content: userCombo(resumeT, jobT) }
     ], { max_tokens: 900, temperature: 0.2 });
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Экстрактивная ужимка резюме
+app.post('/api/resume/condense', async (req, res) => {
+  try {
+    const { resumeText } = req.body;
+    const text = smartTrim(resumeText || '', 12000);
+    if (!text) return res.status(400).json({ error: 'Нужно передать текст резюме' });
+    
+    const cacheKey = `condense:${text}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+    
+    const { json, usage } = await chatJson([
+      { role: 'system', content: sysCondenseResume },
+      { role: 'user', content: userCondenseResume(text) }
+    ], { max_tokens: 700, temperature: 0.1 });
+    
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Объединённая оценка резюме (HR + Grade + ATS)
+app.post('/api/resume/review', async (req, res) => {
+  try {
+    const { resumeText, condensed } = req.body;
+    
+    let reviewInput;
+    if (condensed) {
+      const c = condensed;
+      reviewInput = `
+HEADLINE: ${c.headline || ""}
+YEARS: ${c.years_total || 0}
+
+SKILLS_HARD: ${Array.isArray(c.skills?.hard) ? c.skills.hard.join(", ") : ""}
+SKILLS_SOFT: ${Array.isArray(c.skills?.soft) ? c.skills.soft.join(", ") : ""}
+
+EXPERIENCE:
+${(c.experience || []).map(e =>
+  `- ${e.role} @ ${e.company} (${e.start}–${e.end}) [${(e.stack||[]).join(", ")}]
+  ${ (e.highlights||[]).map(h=>"  • "+h).join("\n") }`
+).join("\n")}
+
+EDUCATION: ${(c.education||[]).map(x=>`${x.degree} ${x.org} (${x.year||""})`).join("; ")}
+LANGUAGES: ${(c.languages||[]).join(", ")}
+LINKS: ${(c.links||[]).join(", ")}
+`.trim();
+    } else {
+      reviewInput = smartTrim(resumeText || '', 9000);
+    }
+    
+    if (!reviewInput) return res.status(400).json({ error: 'Нужно передать resumeText или condensed' });
+    
+    const cacheKey = `review:${reviewInput}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+    
+    const { json, usage } = await chatJson([
+      { role: 'system', content: sysResumeReview },
+      { role: 'user', content: userResumeReview(reviewInput) }
+    ], { max_tokens: 700, temperature: 0.2 });
+    
     const out = { ...json, usage };
     setCached(cacheKey, out);
     res.json(out);

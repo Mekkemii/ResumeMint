@@ -1038,6 +1038,22 @@
             display: none;
         }
         .token-badge { font-size: 12px; opacity: .8; margin-left: 6px; }
+        
+        /* Стили для чекбокса */
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-2);
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #8b5cf6;
+        }
     </style>
 </head>
 <body>
@@ -1090,10 +1106,8 @@
             <div class="cta-buttons">
                 <!-- Hero Actions Panel -->
                 <div class="hero-actions">
-                    <button class="hero-btn" onclick="fireAction('review')">Оценка резюме</button>
                     <button class="hero-btn" onclick="fireAction('combo')">Комбо (выжимка+JD+сопоставить)</button>
-                    <button class="hero-btn" onclick="fireAction('ats')">ATS-проверка</button>
-                    <button class="hero-btn" onclick="fireAction('grade')">Определить грейд</button>
+                    <button class="hero-btn" onclick="fireAction('review')">Оценка резюме</button>
                     <button class="hero-btn" onclick="fireAction('cover')">Сопроводительное</button>
                     <button class="hero-btn premium" onclick="fireAction('premium')">Всё сразу (Premium)</button>
                 </div>
@@ -1109,25 +1123,30 @@
                 <div class="form-container">
                     <!-- Панель переключения -->
                     <div class="panel-switcher">
-                        <button class="panel-btn" onclick="openPanel('review')">Оценка резюме</button>
                         <button class="panel-btn" onclick="openPanel('combo')">Комбо (выжимка+JD+сопоставить)</button>
-                        <button class="panel-btn" onclick="openPanel('ats')">ATS-проверка</button>
-                        <button class="panel-btn" onclick="openPanel('grade')">Определить грейд</button>
+                        <button class="panel-btn" onclick="openPanel('review')">Оценка резюме</button>
                         <button class="panel-btn" onclick="openPanel('cover')">Сопроводительное</button>
                         <button class="panel-btn" onclick="openPanel('premium')">Всё сразу (Premium)</button>
                     </div>
 
                     <!-- Панель Оценка резюме -->
-                    <div id="panel-review" class="form-panel" style="display: block;">
+                    <div id="panel-review" class="form-panel" style="display: none;">
                         <div class="panel-header">
-                            <h3>Оценка резюме (HR + грейд)</h3>
-                            <p class="panel-hint">Структура, качество текста, сильные/слабые стороны и грейд с обоснованием</p>
+                            <h3>Оценка резюме (HR + Грейд + ATS)</h3>
+                            <p class="panel-hint">Структура, качество текста, сильные/слабые стороны, грейд с обоснованием и ATS-совместимость</p>
                         </div>
                         <div class="panel-content">
                             <div class="form-group">
                                 <label>Текст резюме:</label>
                                 <textarea id="review-resume" placeholder="Вставьте текст резюме..."></textarea>
                                 <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleReviewFile(event)" class="file-input">
+                            </div>
+                            <div class="form-group" style="margin-top: 12px;">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="review-condense" checked>
+                                    <span class="checkmark"></span>
+                                    Ужать перед отправкой (экономия токенов без потери ключевых слов)
+                                </label>
                             </div>
                             <div class="panel-actions">
                                 <button class="run-btn" onclick="runReviewFromPanel()" disabled>Запустить оценку резюме</button>
@@ -1136,7 +1155,7 @@
                     </div>
 
                     <!-- Панель Комбо -->
-                    <div id="panel-combo" class="form-panel" style="display: none;">
+                    <div id="panel-combo" class="form-panel" style="display: block;">
                         <div class="panel-header">
                             <h3>Комбо: выжимка резюме + разбор вакансии + сопоставление</h3>
                             <p class="panel-hint">Вставьте резюме и вакансию для комплексного анализа</p>
@@ -1160,41 +1179,7 @@
                         </div>
                     </div>
 
-                    <!-- Панель ATS -->
-                    <div id="panel-ats" class="form-panel" style="display: none;">
-                        <div class="panel-header">
-                            <h3>ATS-проверка</h3>
-                            <p class="panel-hint">Нужен только текст резюме для проверки совместимости с ATS</p>
-                        </div>
-                        <div class="panel-content">
-                            <div class="form-group">
-                                <label>Текст резюме:</label>
-                                <textarea id="ats-resume" placeholder="Вставьте текст резюме..."></textarea>
-                                <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleAtsFile(event)" class="file-input">
-                            </div>
-                            <div class="panel-actions">
-                                <button class="run-btn" onclick="runAtsFromPanel()" disabled>Запустить ATS</button>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Панель Грейд -->
-                    <div id="panel-grade" class="form-panel" style="display: none;">
-                        <div class="panel-header">
-                            <h3>Определить грейд</h3>
-                            <p class="panel-hint">Нужен только текст резюме для определения уровня специалиста</p>
-                        </div>
-                        <div class="panel-content">
-                            <div class="form-group">
-                                <label>Текст резюме:</label>
-                                <textarea id="grade-resume" placeholder="Вставьте текст резюме..."></textarea>
-                                <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleGradeFile(event)" class="file-input">
-                            </div>
-                            <div class="panel-actions">
-                                <button class="run-btn" onclick="runGradeFromPanel()" disabled>Определить грейд</button>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Панель Сопроводительное -->
                     <div id="panel-cover" class="form-panel" style="display: none;">
@@ -1249,8 +1234,6 @@
                     <!-- Результаты по ключам (без накопления) -->
                     <div id="checksResults" class="checks-grid">
                         <div id="res-review" class="check-card" style="grid-column: 1/-1;"></div>
-                        <div id="res-ats" class="check-card"></div>
-                        <div id="res-grade" class="check-card"></div>
                         <div id="res-summary" class="check-card"></div>
                         <div id="res-job" class="check-card"></div>
                         <div id="res-match" class="check-card"></div>
@@ -1400,7 +1383,7 @@
         }
 
         // Система панелей с формами
-        let currentPanel = 'review';
+        let currentPanel = 'combo';
         
         function openPanel(panel) {
             currentPanel = panel;
@@ -1451,16 +1434,6 @@
             const comboBtn = document.querySelector('[onclick="runComboFromPanel()"]');
             if (comboBtn) comboBtn.disabled = !comboResume || !comboJob;
             
-            // ATS
-            const atsResume = document.getElementById('ats-resume')?.value?.trim();
-            const atsBtn = document.querySelector('[onclick="runAtsFromPanel()"]');
-            if (atsBtn) atsBtn.disabled = !atsResume;
-            
-            // Grade
-            const gradeResume = document.getElementById('grade-resume')?.value?.trim();
-            const gradeBtn = document.querySelector('[onclick="runGradeFromPanel()"]');
-            if (gradeBtn) gradeBtn.disabled = !gradeResume;
-            
             // Cover
             const coverResume = document.getElementById('cover-resume')?.value?.trim();
             const coverJob = document.getElementById('cover-job')?.value?.trim();
@@ -1501,31 +1474,7 @@
             }
         }
         
-        async function handleAtsFile(event) {
-            const file = event.target.files[0];
-            if (file) {
-                try {
-                    const text = await fileToText(file);
-                    document.getElementById('ats-resume').value = text;
-                    updateRunButtons();
-                } catch (e) {
-                    alert('Ошибка чтения файла: ' + e.message);
-                }
-            }
-        }
-        
-        async function handleGradeFile(event) {
-            const file = event.target.files[0];
-            if (file) {
-                try {
-                    const text = await fileToText(file);
-                    document.getElementById('grade-resume').value = text;
-                    updateRunButtons();
-                } catch (e) {
-                    alert('Ошибка чтения файла: ' + e.message);
-                }
-            }
-        }
+
         
         async function handleCoverFile(event, field) {
             const file = event.target.files[0];
@@ -1582,6 +1531,10 @@
             
             // Инициализируем панели
             updatePanelVisibility();
+            
+            // Устанавливаем активную кнопку combo по умолчанию
+            const comboBtn = document.querySelector('[onclick="openPanel(\'combo\')"]');
+            if (comboBtn) comboBtn.classList.add('active');
         });
 
         function showAnalysis() {
@@ -1677,7 +1630,18 @@
                 const resume = document.getElementById('review-resume')?.value?.trim();
                 if (!resume) return setBlock('res-review','Введите текст резюме');
                 
-                const data = await postJSON('/api/resume/review', { resumeText: resume });
+                const useCondense = document.getElementById('review-condense')?.checked;
+                let data;
+                
+                if (useCondense) {
+                    // Сначала ужимаем резюме
+                    const condensed = await postJSON('/api/resume/condense', { resumeText: resume });
+                    // Затем делаем оценку на основе ужатого резюме
+                    data = await postJSON('/api/resume/review', { condensed });
+                } else {
+                    // Делаем оценку напрямую
+                    data = await postJSON('/api/resume/review', { resumeText: resume });
+                }
                 
                 // Формируем HTML для вывода результата
                 let html = `<div class="review-result">`;
@@ -1761,23 +1725,9 @@
             } catch (e) { setBlock('res-summary','Ошибка комбо: ' + e.message); }
         }
         
-        async function runAtsFromPanel() {
-            try {
-                const resume = document.getElementById('ats-resume')?.value?.trim();
-                if (!resume) return setBlock('res-ats','Введите текст резюме');
-                const data = await postJSON('/api/resume/ats', { resumeText: resume });
-                setBlock('res-ats',`<b>ATS:</b> ${data.ats_score}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>${(data.issues?.length?`<ul class='list'><li>${data.issues.slice(0,6).join('</li><li>')}</li></ul>`:'')}`);
-            } catch (e) { setBlock('res-ats','Ошибка ATS: ' + e.message); }
-        }
+
         
-        async function runGradeFromPanel() {
-            try {
-                const resume = document.getElementById('grade-resume')?.value?.trim();
-                if (!resume) return setBlock('res-grade','Введите текст резюме');
-                const data = await postJSON('/api/resume/grade', { resumeText: resume });
-                setBlock('res-grade',`<b>Грейд:</b> ${data.grade}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`);
-            } catch (e) { setBlock('res-grade','Ошибка грейда: ' + e.message); }
-        }
+
         
         async function runCoverFromPanel() {
             try {
