@@ -53,6 +53,13 @@
             opacity: 0.8;
         }
 
+        /* Центровка и ограничение ширины всей страницы с анализом */
+        .page-container { 
+            max-width: 1100px; 
+            margin: 0 auto; 
+            padding: 0 16px; 
+        }
+
         /* Основной контент */
         .main-content {
             background-color: #0b0b10;
@@ -1128,33 +1135,31 @@
 
     <!-- Основной контент -->
     <main class="main-content">
+        <div class="page-container">
         <!-- Героическая секция -->
-        <section class="pt-16 md:pt-20 pb-10 md:pb-14">
-            <div class="max-w-3xl mx-auto text-center px-4">
+        <section class="pt-8 pb-6">
+            <div class="text-center">
                 <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">
                     AI ассистент для анализа резюме
                 </h1>
 
-                <p class="mt-4 text-base md:text-lg text-white/80">
+                <p class="mt-2 text-white/80">
                     ResumeMint — AI-ассистент для анализа резюме и вакансий. Мы помогаем специалистам
                     создавать эффективные резюме.
                 </p>
 
-                <p class="mt-6 text-sm md:text-base text-white/70">
-                    Выберите нужную функцию ниже и начните анализ
-                </p>
+                <p class="mt-4 text-white/70">Выберите нужную функцию ниже и начните анализ</p>
 
-                <!-- Кнопки героя по центру + нормальный отступ -->
-                <div class="mt-6 md:mt-8">
-                    <div class="flex flex-wrap items-center justify-center gap-3">
-                        <button class="hero-btn" onclick="fireAction('compare')">Матчинг вакансии</button>
-                        <button class="hero-btn" onclick="fireAction('review')">Оценка резюме</button>
-                        <button class="hero-btn" onclick="fireAction('cover')">Сопроводительное</button>
-                        <button class="hero-btn premium" onclick="fireAction('premium')">Всё сразу</button>
-                    </div>
+                <!-- ряд кнопок по центру (как было, только justify-center) -->
+                <div class="mt-4 flex flex-wrap justify-center gap-3">
+                    <button class="hero-btn" onclick="fireAction('compare')">Матчинг вакансии</button>
+                    <button class="hero-btn" onclick="fireAction('review')">Оценка резюме</button>
+                    <button class="hero-btn" onclick="fireAction('cover')">Сопроводительное</button>
+                    <button class="hero-btn premium" onclick="fireAction('premium')">Всё сразу</button>
                 </div>
 
-                <div class="mt-6 md:mt-8 flex justify-center">
+                <!-- эта кнопка строго по центру с небольшим отступом -->
+                <div class="mt-4">
                     <button class="inline-flex items-center rounded-xl px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10" onclick="showModal()">
                         Как работает сервис
                     </button>
@@ -1163,14 +1168,11 @@
         </section>
 
         <!-- Секция анализа резюме -->
-        <section id="analysisSection" class="mt-16 md:mt-20 scroll-mt-24 space-y-8 md:space-y-10">
-            <div class="max-w-4xl mx-auto px-4">
-                <h2 class="text-center text-3xl md:text-4xl font-extrabold">
-                    Анализ резюме
-                </h2>
-                
-                <!-- Ряд кнопок-табов — строго по центру + вертикальный паддинг -->
-                <div class="flex flex-wrap justify-center gap-3 py-4">
+        <section id="analysisSection" class="mt-10 scroll-mt-24">
+            <h2 class="text-center text-3xl md:text-4xl font-extrabold">Анализ резюме</h2>
+            
+            <!-- ряд табов по центру, без «прижатия» кверху -->
+            <div class="mt-4 mb-2 flex flex-wrap justify-center gap-3">
                     <button class="panel-btn" onclick="openPanel('compare')">Матчинг вакансии</button>
                     <button class="panel-btn" onclick="openPanel('review')">Оценка резюме</button>
                     <button class="panel-btn" onclick="openPanel('cover')">Сопроводительное</button>
@@ -1202,7 +1204,7 @@
                     </div>
 
                     <!-- Панель Матчинг вакансии -->
-                    <div id="panel-compare" class="bg-gray-900/60 rounded-3xl p-6 md:p-8" style="display: block;">
+                    <div id="panel-compare" class="bg-gray-900/60 rounded-3xl p-6 md:p-8" style="display: none;">
                         <div class="text-lg md:text-xl font-semibold text-center">Матчинг вакансии: анализ JD + требуемый грейд + сопоставление</div>
                         <div class="text-xs md:text-sm opacity-70 text-center mt-1">Вставьте резюме и вакансию для комплексного анализа</div>
                         <!-- отступ перед формами, чтобы кнопки "не прилипали" к верху -->
@@ -1440,7 +1442,7 @@
         
         function updatePanelVisibility() {
             // Скрываем все панели
-            document.querySelectorAll('.form-panel').forEach(panel => {
+            document.querySelectorAll('[id^="panel-"]').forEach(panel => {
                 panel.style.display = 'none';
             });
             
@@ -1571,12 +1573,9 @@
                 textarea.addEventListener('input', updateRunButtons);
             });
             
-            // Инициализируем панели
+            // Инициализируем панели - по умолчанию показываем compare
+            currentPanel = 'compare';
             updatePanelVisibility();
-            
-            // Устанавливаем активную кнопку compare по умолчанию
-            const compareBtn = document.querySelector('[onclick="openPanel(\'compare\')"]');
-            if (compareBtn) compareBtn.classList.add('active');
         });
 
         function showAnalysis() {
@@ -1853,5 +1852,7 @@
 
         // Legacy functions removed - no longer needed
     </script>
+        </div>
+    </main>
 </body>
 </html>
