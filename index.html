@@ -805,6 +805,21 @@
         }
         .btn-secondary:hover { background: rgba(139,92,246,0.06); border-color: var(--purple-600); }
 
+        /* CTA buttons in hero */
+        .cta-primary {
+            background: var(--grad-primary);
+            color: var(--on-primary);
+            border: 1px solid transparent;
+            box-shadow: var(--shadow-1);
+        }
+        .cta-primary:hover { filter: brightness(1.05); }
+        .cta-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .cta-secondary:hover { background: rgba(139,92,246,0.06); border-color: var(--purple-600); }
+
         /* Forms and cards */
         .analysis-section { background: transparent; }
         .form-container, .results > div, .results-grid > div, .modal-content {
@@ -843,6 +858,18 @@
         .modal li { color: var(--text-2); }
         .github-link { background: var(--grad-primary); color: var(--on-primary); }
         .github-link:hover { filter: brightness(1.05); }
+
+        /* Detailed analysis on dark */
+        .detailed-analysis {
+            background: linear-gradient(0deg, rgba(43,43,58,0.25), rgba(43,43,58,0.25)), var(--surface);
+            border-left: 4px solid var(--primary-strong);
+            color: var(--text-2);
+            box-shadow: var(--shadow-2);
+        }
+        .detailed-analysis h2 { color: var(--text); border-bottom: 2px solid var(--border); }
+        .detailed-analysis h3 { color: var(--text); }
+        .analysis-content { color: var(--text-2); }
+        .results-grid strong { color: var(--text); }
     </style>
 </head>
 <body>
