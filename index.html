@@ -107,31 +107,33 @@
             padding: 12px 20px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
+            background-color: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.9);
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
             backdrop-filter: blur(10px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .hero-btn:hover {
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(255, 255, 255, 0.1);
             border-color: rgba(255, 255, 255, 0.2);
             transform: translateY(-1px);
         }
 
         .hero-btn.premium {
-            background-color: rgba(245, 158, 11, 0.8);
-            color: black;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
+            color: white;
             font-weight: 600;
-            border-color: rgba(245, 158, 11, 0.4);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.2) inset, 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .hero-btn.premium:hover {
-            background-color: rgba(245, 158, 11, 1);
-            border-color: rgba(245, 158, 11, 0.6);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(236, 72, 153, 0.3));
+            border-color: rgba(139, 92, 246, 0.4);
         }
 
         .cta-primary {
@@ -922,8 +924,33 @@
 
         /* Checks bar */
         .checks-bar { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; }
-        .btn-mini { padding: 10px 14px; border-radius: 10px; font-size: 14px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); }
-        .btn-mini:hover { background: rgba(139,92,246,0.06); border-color: var(--purple-600); }
+        .btn-mini { 
+            padding: 10px 14px; 
+            border-radius: 10px; 
+            font-size: 14px; 
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            background: rgba(255, 255, 255, 0.05); 
+            color: rgba(255, 255, 255, 0.9); 
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-mini:hover { 
+            background: rgba(255, 255, 255, 0.1); 
+            border-color: rgba(255, 255, 255, 0.2); 
+            transform: translateY(-1px);
+        }
+        .btn-mini.premium {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
+            color: white;
+            font-weight: 600;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.2) inset;
+        }
+        .btn-mini.premium:hover {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(236, 72, 153, 0.3));
+            border-color: rgba(139, 92, 246, 0.4);
+        }
 
         .checks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 12px; }
         .check-card { background: linear-gradient(0deg, rgba(43,43,58,0.25), rgba(43,43,58,0.25)), var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; color: var(--text-2); }
@@ -1019,11 +1046,7 @@
                         </div>
                     </div>
 
-                    <div class="button-group">
-                        <button onclick="analyzeResume()" id="analyzeBtn" class="btn btn-primary">Анализировать резюме</button>
-                        <button onclick="loadSample()" class="btn btn-secondary">Загрузить пример</button>
-                        <button onclick="clearFile()" id="clearFileBtn" class="btn btn-secondary" style="display: none;">Удалить файл</button>
-                    </div>
+                    <!-- Legacy buttons removed - replaced by hero actions -->
 
                     <!-- Checks Bar: быстрые чеки -->
                     <div class="checks-bar">
@@ -1031,7 +1054,7 @@
                         <button class="btn-mini" onclick="runAts()">ATS-проверка</button>
                         <button class="btn-mini" onclick="runGrade()">Определить грейд</button>
                         <button class="btn-mini" onclick="runCover()">Сопроводительное</button>
-                        <button class="btn-mini" onclick="runOneShot()" title="Всё сразу (дороже по токенам)">Всё сразу (Premium)</button>
+                        <button class="btn-mini premium" onclick="runOneShot()" title="Всё сразу (дороже по токенам)">Всё сразу (Premium)</button>
                     </div>
 
                     <!-- Результаты по ключам (без накопления) -->
@@ -1052,27 +1075,7 @@
                     <div id="error" class="error"></div>
                 </div>
 
-                <div id="results" class="results">
-                    <h3>Результаты анализа</h3>
-                    <div class="results-grid">
-                        <div>
-                            <strong>Уровень специалиста:</strong>
-                            <p id="level" style="color: #3b82f6; margin: 5px 0;"></p>
-                        </div>
-                        <div>
-                            <strong>ATS совместимость:</strong>
-                            <p id="score" style="color: #3b82f6; margin: 5px 0;"></p>
-                        </div>
-                        <div>
-                            <strong>Найденные навыки:</strong>
-                            <ul id="skills" style="color: #10b981; margin: 5px 0; padding-left: 20px;"></ul>
-                        </div>
-                        <div>
-                            <strong>Рекомендации:</strong>
-                            <ul id="recommendations" style="color: #6b7280; margin: 5px 0; padding-left: 20px;"></ul>
-                        </div>
-                    </div>
-                </div>
+                <!-- Legacy results section removed - replaced by individual check cards -->
             </div>
         </section>
     </main>
@@ -1429,196 +1432,9 @@
                 setBlock('res-match',`<b>Match:</b> ${data.match?.match_percent||'-'}% — сильные: ${(data.match?.highlights||[]).slice(0,3).join(', ')}`);
             } catch (e) { setBlock('res-summary','Ошибка комбо: ' + e.message); }
         }
-        async function analyzeResume() {
-            const analyzeBtn = document.getElementById('analyzeBtn');
-            const loading = document.getElementById('loading');
-            const error = document.getElementById('error');
-            const results = document.getElementById('results');
+        // Legacy analyzeResume function removed - replaced by individual action buttons
 
-            error.style.display = 'none';
-            results.style.display = 'none';
-
-            const resumeText = document.getElementById('resumeText').value.trim();
-            if (!resumeText && !selectedFile) {
-                showError('Введите текст резюме или загрузите файл!');
-                return;
-            }
-
-            analyzeBtn.disabled = true;
-            loading.style.display = 'block';
-
-            try {
-                let response;
-                
-                if (selectedFile) {
-                    const formData = new FormData();
-                    formData.append('resume', selectedFile);
-                    
-                    response = await fetch('/api/resume/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-                } else {
-                    response = await fetch('/api/resume/analyze-text', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ resumeText })
-                    });
-                }
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    displayResults(data.data);
-                } else {
-                    throw new Error(data.error?.message || 'Ошибка анализа');
-                }
-
-            } catch (err) {
-                console.error('Analysis error:', err);
-                showError(err.message || 'Ошибка соединения с сервером');
-            } finally {
-                analyzeBtn.disabled = false;
-                loading.style.display = 'none';
-            }
-        }
-
-        function displayResults(data) {
-            // Отображение уровня специалиста
-            const levelElement = document.getElementById('level');
-            const grade = data.grade || data.level || 'Не определен';
-            levelElement.textContent = grade;
-            
-            // Добавляем цветовую индикацию для уровня
-            levelElement.className = '';
-            if (grade.includes('Junior')) {
-                levelElement.style.color = '#3b82f6';
-            } else if (grade.includes('Middle')) {
-                levelElement.style.color = '#10b981';
-            } else if (grade.includes('Senior')) {
-                levelElement.style.color = '#f59e0b';
-            } else if (grade.includes('Lead') || grade.includes('Expert')) {
-                levelElement.style.color = '#ef4444';
-            }
-            
-            // Отображение ATS совместимости
-            const score = data.atsScore || data.score || 0;
-            const scoreElement = document.getElementById('score');
-            scoreElement.textContent = score + '%';
-            
-            // Цветовая индикация для ATS
-            if (score >= 80) {
-                scoreElement.style.color = '#10b981';
-            } else if (score >= 60) {
-                scoreElement.style.color = '#f59e0b';
-            } else {
-                scoreElement.style.color = '#ef4444';
-            }
-            
-            // Отображение навыков
-            const skillsList = document.getElementById('skills');
-            skillsList.innerHTML = '';
-            const skills = data.skills || [];
-            skills.forEach(skill => {
-                const li = document.createElement('li');
-                li.textContent = skill;
-                skillsList.appendChild(li);
-            });
-
-            // Отображение рекомендаций
-            const recommendationsList = document.getElementById('recommendations');
-            recommendationsList.innerHTML = '';
-            const recommendations = data.recommendations || [];
-            recommendations.forEach(rec => {
-                const li = document.createElement('li');
-                li.textContent = rec;
-                recommendationsList.appendChild(li);
-            });
-
-            // Отображение сильных и слабых сторон
-            let strongPointsList = document.getElementById('strong-points');
-            if (!strongPointsList) {
-                const strongPointsContainer = document.createElement('div');
-                const strongPointsTitle = document.createElement('strong');
-                strongPointsTitle.textContent = 'Сильные стороны:';
-                strongPointsTitle.style.color = '#10b981';
-                
-                strongPointsList = document.createElement('ul');
-                strongPointsList.id = 'strong-points';
-                strongPointsList.style.color = '#10b981';
-                strongPointsList.style.margin = '5px 0';
-                strongPointsList.style.paddingLeft = '20px';
-                
-                strongPointsContainer.appendChild(strongPointsTitle);
-                strongPointsContainer.appendChild(strongPointsList);
-                document.getElementById('results').querySelector('.results-grid').appendChild(strongPointsContainer);
-            }
-            strongPointsList.innerHTML = '';
-            const strongPoints = data.strongPoints || [];
-            strongPoints.forEach(point => {
-                const li = document.createElement('li');
-                li.textContent = point;
-                strongPointsList.appendChild(li);
-            });
-
-            let weakPointsList = document.getElementById('weak-points');
-            if (!weakPointsList) {
-                const weakPointsContainer = document.createElement('div');
-                const weakPointsTitle = document.createElement('strong');
-                weakPointsTitle.textContent = 'Слабые стороны:';
-                weakPointsTitle.style.color = '#ef4444';
-                
-                weakPointsList = document.createElement('ul');
-                weakPointsList.id = 'weak-points';
-                weakPointsList.style.color = '#ef4444';
-                weakPointsList.style.margin = '5px 0';
-                weakPointsList.style.paddingLeft = '20px';
-                
-                weakPointsContainer.appendChild(weakPointsTitle);
-                weakPointsContainer.appendChild(weakPointsList);
-                document.getElementById('results').querySelector('.results-grid').appendChild(weakPointsContainer);
-            }
-            weakPointsList.innerHTML = '';
-            const weakPoints = data.weakPoints || [];
-            weakPoints.forEach(point => {
-                const li = document.createElement('li');
-                li.textContent = point;
-                weakPointsList.appendChild(li);
-            });
-
-            // Отображение детального анализа
-            let detailedSection = document.getElementById('detailed-analysis');
-            if (!detailedSection) {
-                detailedSection = document.createElement('div');
-                detailedSection.id = 'detailed-analysis';
-                detailedSection.className = 'detailed-analysis';
-                document.getElementById('results').appendChild(detailedSection);
-            }
-            
-            if (data.detailedAnalysis) {
-                const formattedAnalysis = data.detailedAnalysis
-                    .replace(/# (.*?)\n/g, '<h2>$1</h2>')
-                    .replace(/## (.*?)\n/g, '<h3>$1</h3>')
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\n\n/g, '</p><p>')
-                    .replace(/\n/g, '<br>');
-                
-                detailedSection.innerHTML = `
-                    <h2>Детальный анализ резюме</h2>
-                    <div class="analysis-content">
-                        ${formattedAnalysis}
-                    </div>
-                `;
-            }
-
-            document.getElementById('results').style.display = 'block';
-        }
+        // Legacy displayResults function removed - replaced by individual check cards
 
         function showError(message) {
             const error = document.getElementById('error');
@@ -1626,10 +1442,7 @@
             error.style.display = 'block';
         }
 
-        function loadSample() {
-            document.getElementById('resumeText').value = 'Иван Иванов\nFrontend Developer\n\nОпыт работы: 2 года\nНавыки: React, TypeScript, JavaScript\nОбразование: Высшее техническое';
-            clearFile();
-        }
+        // Legacy loadSample function removed - no longer needed
         
         function clearFile() {
             document.getElementById('fileInput').value = '';
