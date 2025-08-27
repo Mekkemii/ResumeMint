@@ -98,6 +98,62 @@ async function extractTextFromFile(file) {
   return 'Неизвестный формат файла';
 }
 
+// ===== Helper: compact JSON chat =====
+async function chatJson(messages, options = {}) {
+  const model = options.model || 'gpt-3.5-turbo';
+  const maxTokens = options.max_tokens || 800;
+  const temperature = options.temperature ?? 0.2;
+  const completion = await openai.chat.completions.create({
+    model,
+    messages,
+    temperature,
+    max_tokens: maxTokens
+  });
+  const raw = completion.choices?.[0]?.message?.content || '{}';
+  // Try fenced JSON first
+  let candidate = raw;
+  const fence = raw.match(/```json[\s\S]*?```/i);
+  if (fence) candidate = fence[0].replace(/```json/i, '').replace(/```/, '').trim();
+  // Fallback to first { .. }
+  if (!fence) {
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (m) candidate = m[0];
+  }
+  try {
+    return JSON.parse(candidate);
+  } catch (_) {
+    return { _raw: raw };
+  }
+}
+
+// ===== Prompt templates (short, token-friendly) =====
+function sysResumeAnalyze() {
+  return 'Ты — эксперт по резюме/ATS/IT-грейдам. Отвечай ТОЛЬКО JSON.';
+}
+function userResumeAnalyze(resumeText) {
+  return `ЗАДАЧА:\n1) Краткая структурная проверка.\n2) ATS-дружелюбность.\n3) Грейд (Junior/Middle/Senior/Lead).\n4) Дай короткое summary резюме (<=1200 символов).\nФОРМАТ:\n{\n  "ats_score": 0,\n  "issues": [],\n  "grade": "Junior|Middle|Senior|Lead",\n  "resume_summary": "",\n  "hard_skills": [],\n  "soft_skills": []\n}\nРЕЗЮМЕ:\n${resumeText}`;
+}
+
+function sysJobAnalyze() { return 'Ты — консультант по анализу вакансий. ТОЛЬКО JSON.'; }
+function userJobAnalyze(jobText) {
+  return `ЗАДАЧА: выдели требования/обязанности (5-12), оцени грейд.\nФОРМАТ:\n{\n  "job_grade": "Junior|Middle|Senior|Lead",\n  "requirements": [],\n  "nice_to_have": [],\n  "job_summary": ""\n}\nВАКАНСИЯ:\n${jobText}`;
+}
+
+function sysMatch() { return 'Ты — эксперт по найму. Сопоставляешь skills и требования. ТОЛЬКО JSON.'; }
+function userMatch(resumeSummary, jobSummary, resumeSkills, jobReqs) {
+  return `ФОРМАТ:\n{\n  "match_percent": 0,\n  "gaps": [],\n  "highlights": [],\n  "explanation": ""\n}\nДАНО:\n- РЕЗЮМЕ: ${resumeSummary}\n- НАВЫКИ: ${JSON.stringify(resumeSkills)}\n- ВАКАНСИЯ summary: ${jobSummary}\n- ВАКАНСИЯ requirements: ${JSON.stringify(jobReqs)}`;
+}
+
+function sysCover() { return 'Ты — генератор сопроводительных писем. ТОЛЬКО JSON.'; }
+function userCover(resumeSummary, jobSummary, tone) {
+  return `Сформируй короткое сопроводительное (110-160 слов), тон: ${tone || 'профессиональный'}.\nФОРМАТ: { "cover_letter": "..." }\nДАНО:\n- РЕЗЮМЕ: ${resumeSummary}\n- ВАКАНСИЯ: ${jobSummary}`;
+}
+
+function sysPremium() { return 'Ты — эксперт по резюме/ATS/матчингу. ТОЛЬКО ОДИН JSON.'; }
+function userPremium(resumeText, jobText) {
+  return `Сделай: (1) резюме {ats_score, issues, grade, resume_summary, hard_skills, soft_skills}; (2) вакансия {job_grade, requirements, nice_to_have, job_summary}; (3) match {match_percent, gaps, highlights, explanation}; (4) cover_letter (110-160 слов). Верни один JSON по схеме.\nРЕЗЮМЕ:\n${resumeText}\nВАКАНСИЯ:\n${jobText}`;
+}
+
 // Функция AI анализа с использованием OpenAI
 async function analyzeResumeWithAI(resumeText, questions = {}) {
   try {
@@ -638,6 +694,81 @@ app.post('/api/resume/analyze-text', async (req, res) => {
       success: false,
       error: { message: error.message || 'Ошибка при анализе резюме' }
     });
+  }
+});
+
+// === New compact endpoints ===
+app.post('/api/resume/analyze', async (req, res) => {
+  try {
+    const { resumeText } = req.body;
+    if (!resumeText || resumeText.trim().length < 10) {
+      return res.status(400).json({ error: 'Нужно передать текст резюме' });
+    }
+    const data = await chatJson([
+      { role: 'system', content: sysResumeAnalyze() },
+      { role: 'user', content: userResumeAnalyze(resumeText.trim()) }
+    ], { max_tokens: 900, temperature: 0.2 });
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/job/analyze', async (req, res) => {
+  try {
+    const { jobText } = req.body;
+    if (!jobText || jobText.trim().length < 10) {
+      return res.status(400).json({ error: 'Нужно передать текст вакансии' });
+    }
+    const data = await chatJson([
+      { role: 'system', content: sysJobAnalyze() },
+      { role: 'user', content: userJobAnalyze(jobText.trim()) }
+    ], { max_tokens: 800, temperature: 0.2 });
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/match', async (req, res) => {
+  try {
+    const { resume_summary, job_summary, hard_skills = [], requirements = [] } = req.body;
+    if (!resume_summary || !job_summary) return res.status(400).json({ error: 'Нужны summaries резюме и вакансии' });
+    const data = await chatJson([
+      { role: 'system', content: sysMatch() },
+      { role: 'user', content: userMatch(resume_summary, job_summary, hard_skills, requirements) }
+    ], { max_tokens: 500, temperature: 0.2 });
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/cover-letter', async (req, res) => {
+  try {
+    const { resume_summary, job_summary, tone } = req.body;
+    if (!resume_summary || !job_summary) return res.status(400).json({ error: 'Нужны summaries резюме и вакансии' });
+    const data = await chatJson([
+      { role: 'system', content: sysCover() },
+      { role: 'user', content: userCover(resume_summary, job_summary, tone) }
+    ], { max_tokens: 420, temperature: 0.25 });
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/premium/oneshot', async (req, res) => {
+  try {
+    const { resumeText, jobText } = req.body;
+    if (!resumeText || !jobText) return res.status(400).json({ error: 'Нужны resumeText и jobText' });
+    const data = await chatJson([
+      { role: 'system', content: sysPremium() },
+      { role: 'user', content: userPremium(resumeText, jobText) }
+    ], { max_tokens: 1600, temperature: 0.25 });
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
