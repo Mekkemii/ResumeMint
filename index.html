@@ -529,15 +529,12 @@
 
         /* Секция анализа резюме */
         .analysis-section {
-            padding: 60px 20px;
+            padding: 60px 0;
             background-color: #f8fafc;
             display: none;
         }
 
-        .analysis-container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
+        /* Удаляем старый контейнер - используем rm-container */
 
         .analysis-title {
             text-align: center;
@@ -1096,7 +1093,7 @@
     <main class="main-content">
         <!-- Героическая секция -->
         <section class="hero-section">
-            <div style="max-width: 1100px; margin: 0 auto; padding: 0 16px; text-align: center;">
+            <div class="rm-container text-center">
                 <h1 class="hero-title">ResumeMint</h1>
                 <h2 class="hero-subtitle">AI ассистент для анализа резюме</h2>
                 <p class="hero-description">
@@ -1120,7 +1117,7 @@
 
         <!-- Секция анализа резюме -->
         <section id="analysisSection" class="analysis-section">
-            <div style="max-width: 1100px; margin: 0 auto; padding: 0 16px;">
+            <div class="rm-container rm-nudge">
                 <h2 class="analysis-title" style="text-align: center;">Анализ резюме</h2>
                 
                 <div class="form-container">
