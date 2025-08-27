@@ -1039,6 +1039,31 @@
         }
         .token-badge { font-size: 12px; opacity: .8; margin-left: 6px; }
         
+        /* Стили для таблицы мэппинга */
+        .match-block table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+        
+        .match-block th {
+            text-align: left;
+            padding: 8px;
+            font-weight: 600;
+            color: var(--text-1);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .match-block td {
+            padding: 8px;
+            vertical-align: top;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .match-block tr:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+        
         /* Стили для чекбокса */
         .checkbox-label {
             display: flex;
@@ -1106,10 +1131,10 @@
             <div class="cta-buttons">
                 <!-- Hero Actions Panel -->
                 <div class="hero-actions">
-                    <button class="hero-btn" onclick="fireAction('combo')">Комбо (выжимка+JD+сопоставить)</button>
+                    <button class="hero-btn" onclick="fireAction('compare')">Матчинг вакансии</button>
                     <button class="hero-btn" onclick="fireAction('review')">Оценка резюме</button>
                     <button class="hero-btn" onclick="fireAction('cover')">Сопроводительное</button>
-                    <button class="hero-btn premium" onclick="fireAction('premium')">Всё сразу (Premium)</button>
+                    <button class="hero-btn premium" onclick="fireAction('premium')">Всё сразу</button>
                 </div>
                 <button class="cta-secondary" onclick="showModal()">Как работает сервис</button>
             </div>
@@ -1123,10 +1148,10 @@
                 <div class="form-container">
                     <!-- Панель переключения -->
                     <div class="panel-switcher">
-                        <button class="panel-btn" onclick="openPanel('combo')">Комбо (выжимка+JD+сопоставить)</button>
+                        <button class="panel-btn" onclick="openPanel('compare')">Матчинг вакансии</button>
                         <button class="panel-btn" onclick="openPanel('review')">Оценка резюме</button>
                         <button class="panel-btn" onclick="openPanel('cover')">Сопроводительное</button>
-                        <button class="panel-btn" onclick="openPanel('premium')">Всё сразу (Premium)</button>
+                        <button class="panel-btn" onclick="openPanel('premium')">Всё сразу</button>
                     </div>
 
                     <!-- Панель Оценка резюме -->
@@ -1154,27 +1179,27 @@
                         </div>
                     </div>
 
-                    <!-- Панель Комбо -->
-                    <div id="panel-combo" class="form-panel" style="display: block;">
+                    <!-- Панель Матчинг вакансии -->
+                    <div id="panel-compare" class="form-panel" style="display: block;">
                         <div class="panel-header">
-                            <h3>Комбо: выжимка резюме + разбор вакансии + сопоставление</h3>
+                            <h3>Матчинг вакансии: анализ JD + требуемый грейд + сопоставление</h3>
                             <p class="panel-hint">Вставьте резюме и вакансию для комплексного анализа</p>
                         </div>
                         <div class="panel-content">
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Текст резюме:</label>
-                                    <textarea id="combo-resume" placeholder="Вставьте текст резюме..."></textarea>
-                                    <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleComboFile(event, 'resume')" class="file-input">
+                                    <textarea id="compare-resume" placeholder="Вставьте текст резюме..."></textarea>
+                                    <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleCompareFile(event, 'resume')" class="file-input">
                                 </div>
                                 <div class="form-group">
                                     <label>Текст вакансии:</label>
-                                    <textarea id="combo-job" placeholder="Вставьте текст вакансии..."></textarea>
-                                    <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleComboFile(event, 'job')" class="file-input">
+                                    <textarea id="compare-job" placeholder="Вставьте текст вакансии..."></textarea>
+                                    <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleCompareFile(event, 'job')" class="file-input">
                                 </div>
                             </div>
                             <div class="panel-actions">
-                                <button class="run-btn" onclick="runComboFromPanel()" disabled>Запустить комбо</button>
+                                <button class="run-btn" onclick="runCompareFromPanel()" disabled>Запустить матчинг вакансии</button>
                             </div>
                         </div>
                     </div>
@@ -1209,7 +1234,7 @@
                     <!-- Панель Premium -->
                     <div id="panel-premium" class="form-panel" style="display: none;">
                         <div class="panel-header">
-                            <h3>Всё сразу (Premium)</h3>
+                            <h3>Всё сразу</h3>
                             <p class="panel-hint">Полный пакет: выжимка, JD, сопоставление, письмо</p>
                         </div>
                         <div class="panel-content">
@@ -1383,7 +1408,7 @@
         }
 
         // Система панелей с формами
-        let currentPanel = 'combo';
+        let currentPanel = 'compare';
         
         function openPanel(panel) {
             currentPanel = panel;
@@ -1428,11 +1453,11 @@
             const reviewBtn = document.querySelector('[onclick="runReviewFromPanel()"]');
             if (reviewBtn) reviewBtn.disabled = !reviewResume;
             
-            // Комбо
-            const comboResume = document.getElementById('combo-resume')?.value?.trim();
-            const comboJob = document.getElementById('combo-job')?.value?.trim();
-            const comboBtn = document.querySelector('[onclick="runComboFromPanel()"]');
-            if (comboBtn) comboBtn.disabled = !comboResume || !comboJob;
+            // Матчинг вакансии
+            const compareResume = document.getElementById('compare-resume')?.value?.trim();
+            const compareJob = document.getElementById('compare-job')?.value?.trim();
+            const compareBtn = document.querySelector('[onclick="runCompareFromPanel()"]');
+            if (compareBtn) compareBtn.disabled = !compareResume || !compareJob;
             
             // Cover
             const coverResume = document.getElementById('cover-resume')?.value?.trim();
@@ -1461,12 +1486,12 @@
             }
         }
         
-        async function handleComboFile(event, field) {
+        async function handleCompareFile(event, field) {
             const file = event.target.files[0];
             if (file) {
                 try {
                     const text = await fileToText(file);
-                    document.getElementById(`combo-${field}`).value = text;
+                    document.getElementById(`compare-${field}`).value = text;
                     updateRunButtons();
                 } catch (e) {
                     alert('Ошибка чтения файла: ' + e.message);
@@ -1532,9 +1557,9 @@
             // Инициализируем панели
             updatePanelVisibility();
             
-            // Устанавливаем активную кнопку combo по умолчанию
-            const comboBtn = document.querySelector('[onclick="openPanel(\'combo\')"]');
-            if (comboBtn) comboBtn.classList.add('active');
+            // Устанавливаем активную кнопку compare по умолчанию
+            const compareBtn = document.querySelector('[onclick="openPanel(\'compare\')"]');
+            if (compareBtn) compareBtn.classList.add('active');
         });
 
         function showAnalysis() {
@@ -1709,20 +1734,65 @@
             }
         }
         
-        async function runComboFromPanel() {
+        async function runCompareFromPanel() {
             try {
-                const resume = document.getElementById('combo-resume')?.value?.trim();
-                const job = document.getElementById('combo-job')?.value?.trim();
-                if (!resume || !job) return setBlock('res-summary','Для комбо нужны резюме и вакансия');
+                const resume = document.getElementById('compare-resume')?.value?.trim();
+                const job = document.getElementById('compare-job')?.value?.trim();
+                if (!resume || !job) return setBlock('res-summary','Для матчинга нужны резюме и вакансия');
                 
-                const data = await postJSON('/api/combo/summary-match', { resumeText: resume, jobText: job });
-                // Сохраняем для следующих шагов
-                window.__resumeSummary = { resume_summary: data.resume?.resume_summary||'', hard_skills: data.resume?.hard_skills||[] };
-                window.__jobSummary = { job_summary: data.job?.job_summary||'', requirements: data.job?.requirements||[] };
-                setBlock('res-summary',`<b>Выжимка резюме:</b><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span><div class='opacity-80' style='margin-top:6px;'>${data.resume?.resume_summary||''}</div>`);
-                setBlock('res-job',`<b>Вакансия:</b><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span><div class='opacity-80' style='margin-top:6px;'>${data.job?.job_summary||''}</div>`);
-                setBlock('res-match',`<b>Match:</b> ${data.match?.match_percent||'-'}% — сильные: ${(data.match?.highlights||[]).slice(0,3).join(', ')}`);
-            } catch (e) { setBlock('res-summary','Ошибка комбо: ' + e.message); }
+                const data = await postJSON('/api/job/compare', { resumeText: resume, jobText: job });
+                
+                // Выводим результаты матчинга
+                let html = '';
+                
+                // Блок вакансии
+                if (data.job) {
+                    html += `<div class="job-block">`;
+                    html += `<b>Вакансия</b><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`;
+                    html += `<div class='opacity-80 mt-1'>${data.job.job_summary || ''}</div>`;
+                    if (data.job.requirements?.length > 0) {
+                        html += `<div class='opacity-70 mt-1'>Требования: ${data.job.requirements.slice(0,8).join("; ")}</div>`;
+                    }
+                    if (data.job.job_grade) {
+                        html += `<div class='mt-2 text-sm'><b>Требуемый грейд:</b> ${data.job.job_grade.level}</div>`;
+                        html += `<div class='opacity-80 text-xs'>${data.job.job_grade.rationale}</div>`;
+                    }
+                    html += `</div>`;
+                }
+                
+                // Блок сопоставления
+                if (data.match) {
+                    html += `<div class="match-block md:col-span-2">`;
+                    html += `<b>Соответствие:</b> ${data.match.match_percent}% · ${data.match.chances} · грейд: ${data.match.grade_fit}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`;
+                    if (data.match.highlights?.length > 0) {
+                        html += `<div class='opacity-80 mt-1'>Сильные стороны: ${data.match.highlights.join("; ")}</div>`;
+                    }
+                    if (data.match.gaps?.length > 0) {
+                        html += `<div class='opacity-80 mt-1'>Что подтянуть: ${data.match.gaps.join("; ")}</div>`;
+                    }
+                    
+                    // Таблица мэппинга
+                    if (data.match.mapping?.length > 0) {
+                        html += `<div class='mt-3 overflow-x-auto'>`;
+                        html += `<table class='w-full text-xs border-separate border-spacing-y-1'>`;
+                        html += `<thead class='opacity-70'>`;
+                        html += `<tr><th class='text-left'>Требование</th><th class='text-left'>Доказательство из резюме</th><th class='text-left'>Статус</th><th class='text-left'>Комментарий</th></tr>`;
+                        html += `</thead><tbody>`;
+                        data.match.mapping.slice(0,12).forEach((m, i) => {
+                            html += `<tr class='bg-gray-900/60'>`;
+                            html += `<td class='p-2 align-top'>${m.requirement}</td>`;
+                            html += `<td class='p-2 align-top'>${m.evidence}</td>`;
+                            html += `<td class='p-2 align-top'>${m.status}</td>`;
+                            html += `<td class='p-2 align-top'>${m.comment}</td>`;
+                            html += `</tr>`;
+                        });
+                        html += `</tbody></table></div>`;
+                    }
+                    html += `</div>`;
+                }
+                
+                setBlock('res-match', html);
+            } catch (e) { setBlock('res-summary','Ошибка матчинга: ' + e.message); }
         }
         
 
@@ -1753,21 +1823,7 @@
             } catch (e) { setBlock('res-match','Ошибка premium: ' + e.message); }
         }
         
-        // Старые функции для совместимости (если нужны)
-        async function runCombo() {
-            try {
-                const txt = getResumeText();
-                const j = document.getElementById('jobText')?.value?.trim() || '';
-                if (!txt || !j) return setBlock('res-summary','Для комбо нужны резюме и вакансия');
-                const data = await postJSON('/api/combo/summary-match', { resumeText: txt, jobText: j });
-                // Сохраняем для следующих шагов
-                window.__resumeSummary = { resume_summary: data.resume?.resume_summary||'', hard_skills: data.resume?.hard_skills||[] };
-                window.__jobSummary = { job_summary: data.job?.job_summary||'', requirements: data.job?.requirements||[] };
-                setBlock('res-summary',`<b>Выжимка резюме:</b><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span><div class='opacity-80' style='margin-top:6px;'>${data.resume?.resume_summary||''}</div>`);
-                setBlock('res-job',`<b>Вакансия:</b><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span><div class='opacity-80' style='margin-top:6px;'>${data.job?.job_summary||''}</div>`);
-                setBlock('res-match',`<b>Match:</b> ${data.match?.match_percent||'-'}% — сильные: ${(data.match?.highlights||[]).slice(0,3).join(', ')}`);
-            } catch (e) { setBlock('res-summary','Ошибка комбо: ' + e.message); }
-        }
+
         // Legacy analyzeResume function removed - replaced by individual action buttons
 
         // Legacy displayResults function removed - replaced by individual check cards
