@@ -90,6 +90,48 @@
             gap: 20px;
             justify-content: center;
             flex-wrap: wrap;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Hero Actions Panel */
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .hero-btn {
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-btn:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .hero-btn.premium {
+            background-color: rgba(245, 158, 11, 0.8);
+            color: black;
+            font-weight: 600;
+            border-color: rgba(245, 158, 11, 0.4);
+        }
+
+        .hero-btn.premium:hover {
+            background-color: rgba(245, 158, 11, 1);
+            border-color: rgba(245, 158, 11, 0.6);
         }
 
         .cta-primary {
@@ -532,6 +574,10 @@
             font-size: 14px;
         }
 
+        #jobText {
+            min-height: 100px;
+        }
+
         textarea:focus {
             outline: none;
             border-color: #3b82f6;
@@ -928,11 +974,18 @@
             <p class="hero-description">
                 ResumeMint - AI-ассистент для анализа резюме и вакансий. Мы помогаем специалистам создавать эффективные резюме.
             </p>
+            <p class="hero-hint" style="font-size: 14px; color: #6b7280; margin-bottom: 30px;">
+                Выберите нужную функцию ниже и начните анализ
+            </p>
             <div class="cta-buttons">
-                <button class="cta-primary" onclick="showAnalysis()">
-                    <span class="icon icon-search"></span>
-                    Проверить резюме
-                </button>
+                <!-- Hero Actions Panel -->
+                <div class="hero-actions">
+                    <button class="hero-btn" onclick="fireAction('combo')">Комбо (выжимка+JD+сопоставить)</button>
+                    <button class="hero-btn" onclick="fireAction('ats')">ATS-проверка</button>
+                    <button class="hero-btn" onclick="fireAction('grade')">Определить грейд</button>
+                    <button class="hero-btn" onclick="fireAction('cover')">Сопроводительное</button>
+                    <button class="hero-btn premium" onclick="fireAction('premium')">Всё сразу (Premium)</button>
+                </div>
                 <button class="cta-secondary" onclick="showModal()">Как работает сервис</button>
             </div>
         </section>
@@ -946,6 +999,11 @@
                     <div class="form-group">
                         <label for="resumeText">Вставьте текст вашего резюме:</label>
                         <textarea id="resumeText" placeholder="Вставьте текст вашего резюме здесь..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="jobText">Вставьте текст вакансии (для комбо и сопоставления):</label>
+                        <textarea id="jobText" placeholder="Вставьте текст вакансии здесь..."></textarea>
                     </div>
 
                     <div class="form-group">
@@ -1136,6 +1194,57 @@
     <script>
         let selectedFile = null;
 
+        // Hero Actions - отправка событий в анализаторе
+        function fireAction(action) {
+            // Показываем секцию анализа
+            document.getElementById('analysisSection').style.display = 'block';
+            
+            // Плавный скролл к анализатору
+            document.getElementById('analysisSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Отправляем событие для обработки в анализаторе
+            window.dispatchEvent(new CustomEvent('rm-action', { detail: action }));
+        }
+
+        // Обработчик событий из героя
+        window.addEventListener('rm-action', function(e) {
+            const action = e.detail;
+            
+            // Открываем модалку Premium
+            if (action === 'premium') {
+                // Показываем модалку для ввода вакансии
+                const vacancyText = prompt('Вставьте текст вакансии для премиум-анализа:');
+                if (vacancyText) {
+                    // Сохраняем текст вакансии и запускаем премиум
+                    window.__jobSummary = { job_summary: vacancyText, requirements: [] };
+                    runOneShot();
+                }
+                return;
+            }
+            
+            // Для остальных действий - фокус на поле резюме
+            if (action === 'ats' || action === 'grade' || action === 'cover') {
+                const resumeTextarea = document.getElementById('resumeText');
+                if (resumeTextarea) {
+                    resumeTextarea.focus();
+                }
+            }
+            
+            // Для комбо - фокус на поле вакансии, если резюме уже заполнено
+            if (action === 'combo') {
+                const resumeText = document.getElementById('resumeText')?.value?.trim();
+                const jobTextarea = document.getElementById('jobText');
+                if (resumeText && jobTextarea) {
+                    jobTextarea.focus();
+                } else {
+                    const resumeTextarea = document.getElementById('resumeText');
+                    if (resumeTextarea) {
+                        resumeTextarea.focus();
+                    }
+                }
+            }
+        });
+
         function showAnalysis() {
             document.getElementById('analysisSection').style.display = 'block';
             document.getElementById('analysisSection').scrollIntoView({ behavior: 'smooth' });
@@ -1299,7 +1408,7 @@
         async function runOneShot() {
             try {
                 const txt = getResumeText();
-                const j = window.__jobSummary?.job_summary || prompt('Вставьте текст вакансии для премиум-анализа:') || '';
+                const j = document.getElementById('jobText')?.value?.trim() || prompt('Вставьте текст вакансии для премиум-анализа:') || '';
                 if (!txt || !j) return setBlock('res-match','Нужны резюме и вакансия');
                 const data = await postJSON('/api/premium/oneshot', { resumeText: txt, jobText: j });
                 setBlock('res-match',`<b>Premium:</b> match ${data.match?.match_percent ?? '-'}%, grade ${data.resume?.grade ?? '-'}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`);
@@ -1309,7 +1418,7 @@
         async function runCombo() {
             try {
                 const txt = getResumeText();
-                const j = window.__jobSummary?.job_summary || document.querySelector('textarea[placeholder^="Вставьте текст вакансии"]')?.value || '';
+                const j = document.getElementById('jobText')?.value?.trim() || '';
                 if (!txt || !j) return setBlock('res-summary','Для комбо нужны резюме и вакансия');
                 const data = await postJSON('/api/combo/summary-match', { resumeText: txt, jobText: j });
                 // Сохраняем для следующих шагов
