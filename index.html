@@ -969,12 +969,9 @@
 
                     <!-- Checks Bar: быстрые чеки -->
                     <div class="checks-bar">
+                        <button class="btn-mini" onclick="runCombo()">Комбо (выжимка+JD+сопоставить)</button>
                         <button class="btn-mini" onclick="runAts()">ATS-проверка</button>
                         <button class="btn-mini" onclick="runGrade()">Определить грейд</button>
-                        <button class="btn-mini" onclick="runResumeSummary()">Выжимка резюме</button>
-                        <button class="btn-mini" onclick="promptJobText()">Разобрать вакансию</button>
-                        <button class="btn-mini" onclick="runMatch()">Сопоставить</button>
-                        <button class="btn-mini" onclick="runCombo()">Комбо (выжимка+JD+сопоставить)</button>
                         <button class="btn-mini" onclick="runCover()">Сопроводительное</button>
                         <button class="btn-mini" onclick="runOneShot()" title="Всё сразу (дороже по токенам)">Всё сразу (Premium)</button>
                     </div>
@@ -1284,39 +1281,7 @@
             } catch (e) { setBlock('res-grade','Ошибка грейда: ' + e.message); }
         }
 
-        async function runResumeSummary() {
-            try {
-                const txt = getResumeText();
-                if (!txt) return setBlock('res-summary','<b>Выжимка:</b> нет текста резюме');
-                const data = await postJSON('/api/resume/analyze', { resumeText: txt });
-                window.__resumeSummary = data; // сохранить для матчинга/письма
-                setBlock('res-summary',`<b>Выжимка резюме:</b> грейд ${data.grade}, ATS ${data.ats_score}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span><div class='opacity-80' style='margin-top:6px;'>${data.resume_summary||''}</div>`);
-            } catch (e) { setBlock('res-summary','Ошибка выжимки: ' + e.message); }
-        }
-
-        async function promptJobText() {
-            const job = prompt('Вставьте текст вакансии (JD):');
-            if (!job) return;
-            try {
-                const data = await postJSON('/api/job/analyze', { jobText: job });
-                window.__jobSummary = data;
-                setBlock('res-job',`<b>Вакансия:</b> грейд ${data.job_grade}; треб.: ${data.requirements.slice(0,5).join(', ')}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span><div class='opacity-80' style='margin-top:6px;'>${data.job_summary||''}</div>`);
-            } catch (e) { setBlock('res-job','Ошибка вакансии: ' + e.message); }
-        }
-
-        async function runMatch() {
-            try {
-                const r = window.__resumeSummary; const j = window.__jobSummary;
-                if (!r || !j) return setBlock('res-match','Сначала сделайте выжимку резюме и разбор вакансии');
-                const data = await postJSON('/api/match', {
-                    resume_summary: r.resume_summary,
-                    hard_skills: r.hard_skills || [],
-                    job_summary: j.job_summary,
-                    requirements: j.requirements || []
-                });
-                setBlock('res-match',`<b>Match:</b> ${data.match_percent}% — сильные: ${data.highlights.slice(0,3).join(', ')}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`);
-            } catch (e) { setBlock('res-match','Ошибка сопоставления: ' + e.message); }
-        }
+        // Удалены отдельные шаги выжимки/вакансии/сопоставления — их делает Комбо
 
         async function runCover() {
             try {
