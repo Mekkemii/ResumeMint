@@ -749,6 +749,7 @@
             --primary-strong: var(--purple-500);
             --primary-weak: var(--purple-300);
             --on-primary: #fafaff;
+            --mint: #2dd4bf;
 
             --success: #22c55e;
             --warning: #f59e0b;
@@ -780,7 +781,9 @@
         }
         .main-nav .nav-link { color: var(--text); }
         .main-nav .nav-link:hover { color: var(--primary); }
-        .logo { color: var(--on-primary); }
+        .logo { color: var(--on-primary); display: flex; align-items: center; gap: 10px; }
+        .logo .brand-text { color: var(--text); font-weight: 700; letter-spacing: 0.2px; }
+        .logo .brand-icon { width: 34px; height: 34px; border-radius: 10px; box-shadow: var(--shadow-1); }
 
         /* Hero */
         .hero-title { color: var(--text); }
@@ -875,7 +878,32 @@
 <body>
     <!-- Черная навигация -->
     <nav class="main-nav">
-        <div class="logo">Логотип</div>
+        <div class="logo" aria-label="ResumeMint.ru">
+            <svg class="brand-icon" viewBox="0 0 64 64" role="img" aria-hidden="true">
+                <defs>
+                    <linearGradient id="rmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#6e2ed6"/>
+                        <stop offset="60%" stop-color="#8b5cf6"/>
+                    </linearGradient>
+                </defs>
+                <!-- Документ с загнутым уголком -->
+                <path d="M14 10h24l12 12v28a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V14a4 4 0 0 1 4-4z" fill="url(#rmGrad)"/>
+                <path d="M38 10v12h12" fill="none" stroke="#a78bfa" stroke-opacity="0.6" stroke-width="2"/>
+                <!-- Линии/треки -->
+                <g stroke="#a78bfa" stroke-opacity="0.7" stroke-width="2" fill="none" stroke-linecap="round">
+                    <path d="M8 30h18"/>
+                    <path d="M8 36h22"/>
+                    <path d="M8 42h20"/>
+                    <circle cx="8" cy="30" r="2" fill="#a78bfa"/>
+                    <circle cx="8" cy="36" r="2" fill="#a78bfa"/>
+                    <circle cx="8" cy="42" r="2" fill="#a78bfa"/>
+                </g>
+                <!-- Кружок с листом -->
+                <circle cx="42" cy="44" r="12" fill="#0b0b10" stroke="var(--mint)" stroke-width="4"/>
+                <path d="M36 44c4-5 9-6 12-6-1 5-4 9-9 11" fill="none" stroke="var(--mint)" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <span class="brand-text">ResumeMint.ru</span>
+        </div>
         <div class="nav-links">
             <a href="#" class="nav-link" onclick="showSupportModal()">Поддержать проект</a>
             <a href="#" class="nav-link" onclick="showQRModal()">Контакты для ОС</a>
