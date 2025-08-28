@@ -47,7 +47,17 @@ app.use(express.static(path.join(__dirname, '..')));
 
 // Serve index.html for the root route
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'index.html'));
+    console.log('Запрос к корневой странице');
+    const indexPath = path.join(__dirname, '..', 'index.html');
+    console.log('Путь к index.html:', indexPath);
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            console.error('Ошибка отправки index.html:', err);
+            res.status(500).send('Ошибка загрузки страницы');
+        } else {
+            console.log('index.html отправлен успешно');
+        }
+    });
 });
 
 // Настройка multer для загрузки файлов
