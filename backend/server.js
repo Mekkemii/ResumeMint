@@ -22,7 +22,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const OpenAI = require('openai');
 const { prepareText } = require('./services/preprocess');
-const { detectExperience } = require('./utils/experience');
+const { detectExperience, injectExperienceMarkers } = require('./utils/experience');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
@@ -325,11 +325,22 @@ function userResumeReview(reviewInput, evidence) {
     return 'Ошибка: неверные входные данные для анализа резюме';
   }
   
+  // Добавляем инструкции по распознаванию HH-структуры и маркеров опыта
+  const hhInstructions = `
+ВАЖНО: Это резюме кандидата (возможны маркеры [EXPERIENCE]...[/EXPERIENCE] вокруг блоков опыта и структура HH):
+- Сначала определи явные блоки опыта: 'Опыт работы/Карьера/Проекты/Практика/Фриланс/Консалтинг/Подработка' и т.п.
+- Если видишь маркеры [EXPERIENCE]...[/EXPERIENCE], считай эти части опытом.
+- Заголовок 'Специализации' — это не опыт.
+- Даты вида 'ММ.ГГГГ — н.в.' интерпретируй как период работы.
+- Ищи опыт даже в нестандартных форматах: проекты, кейсы, фриланс, стажировки.
+
+`;
+  
   const ev = evidence?.found
     ? `\n\nНайденные признаки опыта (не вставлять в ответ дословно, использовать как ориентиры):\n- ${evidence.lines.join("\n- ")}\n`
     : `\n\nВ тексте не найдено явного описания опыта: оцени аккуратно и пиши «не указано», если фактов нет.\n`;
   
-  return `ЗАДАЧА:
+  return `${hhInstructions}ЗАДАЧА:
 1) Оцени качество и структуру резюме (кратко).
 2) Определи грейд кандидата и обоснуй.
 3) Дай ATS-срез: общий балл и главные проблемы (3–7).
@@ -1196,7 +1207,7 @@ LANGUAGES: ${(c.languages||[]).join(", ")}
 LINKS: ${(c.links||[]).join(", ")}
 `.trim();
     } else {
-      // Автоматическая предобработка резюме
+      // Автоматическая предобработка резюме с маркировкой опыта
       const prep = await prepareText(resumeText || '', 'resume');
       reviewInput = prep.text;
       console.log('Preprocessing info:', prep);
@@ -1212,9 +1223,15 @@ LINKS: ${(c.links||[]).join(", ")}
       });
     }
     
-    // Детекция опыта работы
+    // Детекция опыта работы и маркировка
     const evidence = detectExperience(reviewInput);
     console.log('Experience evidence:', evidence);
+    
+    // Добавляем маркеры опыта в текст для лучшего распознавания моделью
+    if (evidence.found && evidence.spans.length > 0) {
+      reviewInput = injectExperienceMarkers(reviewInput, evidence.spans);
+      console.log('Added experience markers to text');
+    }
     
     const cacheKey = `review:${reviewInput}`;
     const hit = getCached(cacheKey);

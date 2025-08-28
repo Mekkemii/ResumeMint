@@ -1,24 +1,125 @@
 /**
- * Детектор опыта работы в тексте резюме
- * Ищет признаки опыта с помощью регулярных выражений
+ * Расширенный детектор опыта работы в тексте резюме
+ * Ищет признаки опыта с помощью регулярных выражений и контекстного анализа
+ * Поддерживает различные форматы записи (HH, стандартные резюме, фриланс и т.д.)
  */
 
-function detectExperience(text) {
-  const src = (text || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+// Заголовки, которые НЕ являются опытом работы
+const NOISE_HEADERS = [
+  /^(специализаци[яи]|навыки|ключевые навыки|о себе|образование|сертификаты|курсы|обучение)\b/i,
+];
 
-  const patterns = [
-    /\b(опыт работы|experience|employment|work history)\b/i,
-    /\b(стаж|intern(ship)?|практика)\b/i,
-    /\b(разработчик|аналитик|инженер|менеджер|администратор|data|ml|devops|fraud|антифрод)\b/i,
-    /\b(ООО|АО|ПАО|банк|ltd|inc|corp|ООО\s+[«"]?.+?["»]?|банк\s+\S+)/i,
-    /\b(20\d{2})\b.*\b(20\d{2}|по наст|наст\.|настоящее)\b/i, // годы
-  ];
+// Заголовки, которые ЯВНО указывают на опыт работы
+const EXP_HEADERS = [
+  /^(опыт работы|профессиональный опыт|карьера|трудовая деятельность|история работы|работа)\b/i,
+  /^(проекты|коммерческие проекты|кейсы|портфолио|реализованные проекты)\b/i,
+  /^(практика|производственная практика|стажировка|интернатура|подработка|волонтерство)\b/i,
+  /^(фриланс|консалтинг|внештатн|самозанят|гпх|удаленная работа|remote)\b/i,
+];
+
+// Ключевые слова, связанные с должностями и ролями
+const POSITION_WORDS = /\b(должност|роль|позици|developer|engineer|analyst|менеджер|аналитик|разработчик|инженер|devops|data|fraud|антифрод|архитектор|дизайнер|тестировщик|qa|pm|po|ba|product|project|team lead|руководитель|директор|специалист|эксперт|консультант)\b/i;
+
+// Ключевые слова, связанные с компаниями
+const COMPANY_WORDS = /\b(ООО|АО|ПАО|банк|ltd|inc|corp|LLC|ООО\s+[«"].+?["»]?|банк\s+\S+|компания|организация|фирма|агентство|студия|лаборатория)\b/i;
+
+// Ключевые слова, связанные с обязанностями
+const DUTY_WORDS = /\b(обязанност|задач|ответственност|функци|работал|выполнял|участвовал|разрабатывал|создавал|оптимизировал|внедрял|интегрировал|поддерживал|администрировал)\b/i;
+
+// Ключевые слова, связанные с достижениями
+const ACH_WORDS = /\b(достижен|результат|kpi|метрик|экономическ|снизил|повысил|улучшил|увеличил|сократил|оптимизировал|автоматизировал|внедрил|реализовал|запустил|развернул)\b/i;
+
+// Паттерн для дат (различные форматы)
+const DATE_PATTERN = /(?:\b(20\d{2}|\d{2}\.\d{4}|\d{1,2}\.\d{4})\b)\s*[–\-—]\s*(?:\b(20\d{2}|по наст|наст\.|н\.в\.|\d{2}\.\d{4}|\d{1,2}\.\d{4}|настоящее время|present|current)\b)/i;
+
+function detectExperience(text) {
+  const raw = (text || "").replace(/\r/g, "\n");
+  const lines = raw.split("\n");
+  const clean = lines.map(s => s.trim()).filter(Boolean);
 
   const hits = [];
-  for (const line of src) {
-    if (patterns.some(p => p.test(line))) hits.push(line);
+  const spans = [];
+
+  // 1) Поиск явных заголовков опытных разделов
+  for (let i = 0; i < clean.length; i++) {
+    if (EXP_HEADERS.some(h => h.test(clean[i]))) {
+      // Собираем блок до следующего "шумного" заголовка
+      let j = i + 1;
+      while (j < clean.length && 
+             !NOISE_HEADERS.some(n => n.test(clean[j])) && 
+             !EXP_HEADERS.some(h => h.test(clean[j]))) {
+        j++;
+      }
+      spans.push({ start: i, end: j - 1 });
+      for (let k = i; k < j; k++) {
+        if (!hits.includes(k)) hits.push(k);
+      }
+    }
   }
-  return { found: hits.length > 0, lines: hits.slice(0, 12) };
+
+  // 2) Поиск пар "даты + роль/компания/обязанности" — часто это HH формат
+  for (let i = 0; i < clean.length; i++) {
+    const s = clean[i];
+    if (DATE_PATTERN.test(s)) {
+      // Проверяем контекст вокруг даты (окно в 4 строки)
+      const window = clean.slice(Math.max(0, i - 2), Math.min(clean.length, i + 4)).join(" ");
+      if (POSITION_WORDS.test(window) || COMPANY_WORDS.test(window) || DUTY_WORDS.test(window) || ACH_WORDS.test(window)) {
+        if (!hits.includes(i)) hits.push(i);
+        spans.push({ start: i, end: Math.min(clean.length - 1, i + 3) });
+      }
+    }
+  }
+
+  // 3) Поиск строк с явными признаками опыта (даже без дат)
+  for (let i = 0; i < clean.length; i++) {
+    const s = clean[i];
+    // Если строка содержит должность + компанию или обязанности
+    if ((POSITION_WORDS.test(s) && COMPANY_WORDS.test(s)) || 
+        (POSITION_WORDS.test(s) && DUTY_WORDS.test(s)) ||
+        (COMPANY_WORDS.test(s) && ACH_WORDS.test(s))) {
+      if (!hits.includes(i)) hits.push(i);
+    }
+  }
+
+  // Уникализируем и сортируем
+  const uniq = [...new Set(hits)].sort((a, b) => a - b);
+  const linesOut = uniq.map(i => clean[i]).filter(Boolean).slice(0, 24);
+
+  // Объединяем пересекающиеся интервалы
+  spans.sort((a, b) => a.start - b.start);
+  const merged = [];
+  for (const s of spans) {
+    if (!merged.length || s.start > merged[merged.length - 1].end + 1) {
+      merged.push({ ...s });
+    } else {
+      merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, s.end);
+    }
+  }
+
+  return { 
+    found: uniq.length > 0, 
+    lines: linesOut, 
+    spans: merged 
+  };
 }
 
-module.exports = { detectExperience };
+/**
+ * Вставляет маркеры опыта в текст для лучшего распознавания моделью
+ */
+function injectExperienceMarkers(text, spans) {
+  const raw = (text || "").replace(/\r/g, "\n");
+  const lines = raw.split("\n");
+  
+  // Вставляем маркеры с конца, чтобы не сбить индексы
+  for (let k = spans.length - 1; k >= 0; k--) {
+    const { start, end } = spans[k];
+    if (end + 1 < lines.length) {
+      lines.splice(end + 1, 0, "[/EXPERIENCE]");
+    }
+    lines.splice(start, 0, "[EXPERIENCE]");
+  }
+  
+  return lines.join("\n");
+}
+
+module.exports = { detectExperience, injectExperienceMarkers };
