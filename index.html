@@ -1141,13 +1141,7 @@
                                 <textarea id="review-resume" placeholder="Вставьте текст резюме..."></textarea>
                                 <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleReviewFile(event)" class="file-input">
                             </div>
-                            <div class="form-group" style="margin-top: 12px;">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="review-condense" checked>
-                                    <span class="checkmark"></span>
-                                    Ужать перед отправкой (экономия токенов без потери ключевых слов)
-                                </label>
-                            </div>
+
                             <div class="panel-actions">
                                 <button class="run-btn" onclick="runReviewFromPanel()" disabled>Запустить оценку резюме</button>
                             </div>
@@ -1631,16 +1625,15 @@
                 const resume = document.getElementById('review-resume')?.value?.trim();
                 if (!resume) return setBlock('res-review','Введите текст резюме');
                 
-                const useCondense = document.getElementById('review-condense')?.checked;
                 let data;
                 
-                if (useCondense) {
-                    // Сначала ужимаем резюме
+                // Автоматически ужимаем резюме если оно длинное (больше 2000 символов)
+                if (resume.length > 2000) {
+                    setBlock('res-review', 'Ужимаем резюме для экономии токенов...');
                     const condensed = await postJSON('/api/resume/condense', { resumeText: resume });
-                    // Затем делаем оценку на основе ужатого резюме
                     data = await postJSON('/api/resume/review', { condensed });
                 } else {
-                    // Делаем оценку напрямую
+                    // Делаем оценку напрямую для коротких резюме
                     data = await postJSON('/api/resume/review', { resumeText: resume });
                 }
                 
@@ -1716,7 +1709,23 @@
                 const job = document.getElementById('compare-job')?.value?.trim();
                 if (!resume || !job) return setBlock('res-summary','Для матчинга нужны резюме и вакансия');
                 
-                const data = await postJSON('/api/job/compare', { resumeText: resume, jobText: job });
+                // Автоматически ужимаем длинные тексты
+                let resumeText = resume;
+                let jobText = job;
+                
+                if (resume.length > 2000) {
+                    setBlock('res-summary', 'Ужимаем резюме...');
+                    const condensed = await postJSON('/api/resume/condense', { resumeText: resume });
+                    resumeText = JSON.stringify(condensed);
+                }
+                
+                if (job.length > 2000) {
+                    setBlock('res-summary', 'Ужимаем вакансию...');
+                    // Для вакансий используем простую обрезку
+                    jobText = job.substring(0, 2000) + (job.length > 2000 ? '...' : '');
+                }
+                
+                const data = await postJSON('/api/job/compare', { resumeText: resumeText, jobText: jobText });
                 
                 // Формируем HTML для результатов
                 let html = '';
@@ -1773,7 +1782,24 @@
                 const resume = document.getElementById('premium-resume')?.value?.trim();
                 const job = document.getElementById('premium-job')?.value?.trim();
                 if (!resume || !job) return setBlock('res-match','Нужны резюме и вакансия');
-                const data = await postJSON('/api/premium/oneshot', { resumeText: resume, jobText: job });
+                
+                // Автоматически ужимаем длинные тексты
+                let resumeText = resume;
+                let jobText = job;
+                
+                if (resume.length > 2000) {
+                    setBlock('res-match', 'Ужимаем резюме...');
+                    const condensed = await postJSON('/api/resume/condense', { resumeText: resume });
+                    resumeText = JSON.stringify(condensed);
+                }
+                
+                if (job.length > 2000) {
+                    setBlock('res-match', 'Ужимаем вакансию...');
+                    // Для вакансий используем простую обрезку
+                    jobText = job.substring(0, 2000) + (job.length > 2000 ? '...' : '');
+                }
+                
+                const data = await postJSON('/api/premium/oneshot', { resumeText: resumeText, jobText: jobText });
                 setBlock('res-match',`<b>Premium:</b> match ${data.match?.match_percent ?? '-'}%, grade ${data.resume?.grade ?? '-'}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`);
             } catch (e) { setBlock('res-match','Ошибка premium: ' + e.message); }
         }
