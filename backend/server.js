@@ -1097,7 +1097,7 @@ app.post('/api/resume/condense', async (req, res) => {
     if (hit) return res.json(hit);
     
     const { json, usage } = await chatJson([
-      { role: 'system', content: sysCondenseResume },
+      { role: 'system', content: sysCondenseResume() },
       { role: 'user', content: userCondenseResume(text) }
     ], { max_tokens: 700, temperature: 0.1 });
     
