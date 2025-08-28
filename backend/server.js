@@ -3,6 +3,17 @@
  * Настройка Express сервера с middleware и маршрутами
  */
 
+// Обработка необработанных ошибок
+process.on('uncaughtException', (error) => {
+  console.error('Необработанная ошибка:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Необработанное отклонение промиса:', reason);
+  process.exit(1);
+});
+
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -1109,6 +1120,35 @@ LINKS: ${(c.links||[]).join(", ")}
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+// API root endpoint
+app.get('/api', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'ResumeMint API работает',
+    timestamp: new Date().toISOString(),
+    service: 'ResumeMint API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      parse: '/api/parse/docx',
+      resume: {
+        ats: '/api/resume/ats',
+        grade: '/api/resume/grade',
+        analyze: '/api/resume/analyze',
+        condense: '/api/resume/condense',
+        review: '/api/resume/review'
+      },
+      job: {
+        analyze: '/api/job/analyze'
+      },
+      match: '/api/match',
+      cover: '/api/cover-letter',
+      premium: '/api/premium/oneshot',
+      combo: '/api/combo/summary-match'
+    }
+  });
 });
 
 // Health check
