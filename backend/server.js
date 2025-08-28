@@ -125,9 +125,27 @@ async function extractTextFromFile(file) {
 
 // ===== Helper: compact JSON chat =====
 async function chatJson(messages, options = {}) {
+  // Валидация входных данных
+  if (!Array.isArray(messages) || messages.length === 0) {
+    console.error('chatJson: invalid messages array:', messages);
+    throw new Error('Invalid messages array');
+  }
+  
+  // Проверяем, что все сообщения имеют content
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    if (!msg || typeof msg !== 'object' || !msg.content || typeof msg.content !== 'string') {
+      console.error(`chatJson: invalid message at index ${i}:`, msg);
+      throw new Error(`Invalid message at index ${i}: content must be a string`);
+    }
+  }
+  
   const model = options.model || 'gpt-3.5-turbo';
   const maxTokens = options.max_tokens || 800;
   const temperature = options.temperature ?? 0.2;
+  
+  console.log('chatJson: sending request with', messages.length, 'messages');
+  
   const completion = await openai.chat.completions.create({
     model,
     messages,
@@ -270,6 +288,11 @@ ${resumeText}`;
 // ===== ОЦЕНКА РЕЗЮМЕ (HR + Grade + ATS) =====
 function sysResumeReview() { return 'Ты — эксперт по резюме, ATS и грейдам. Отвечай ТОЛЬКО валидным JSON.'; }
 function userResumeReview(reviewInput) {
+  if (!reviewInput || typeof reviewInput !== 'string') {
+    console.error('userResumeReview: invalid input:', reviewInput);
+    return 'Ошибка: неверные входные данные для анализа резюме';
+  }
+  
   return `ЗАДАЧА:
 1) Оцени качество и структуру резюме (кратко).
 2) Определи грейд кандидата и обоснуй.
@@ -1087,7 +1110,18 @@ app.post('/api/resume/condense', async (req, res) => {
 // Объединённая оценка резюме (HR + Grade + ATS)
 app.post('/api/resume/review', async (req, res) => {
   try {
+    console.log('=== REVIEW DEBUG ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
     const { resumeText, condensed } = req.body;
+    
+    // Валидация входных данных
+    if (!resumeText && !condensed) {
+      return res.status(400).json({ 
+        error: 'Нужно передать resumeText или condensed',
+        received: { resumeText: !!resumeText, condensed: !!condensed }
+      });
+    }
     
     let reviewInput;
     if (condensed) {
@@ -1113,7 +1147,15 @@ LINKS: ${(c.links||[]).join(", ")}
       reviewInput = smartTrim(resumeText || '', 9000);
     }
     
-    if (!reviewInput) return res.status(400).json({ error: 'Нужно передать resumeText или condensed' });
+    console.log('Review input length:', reviewInput ? reviewInput.length : 0);
+    console.log('Review input preview:', reviewInput ? reviewInput.substring(0, 100) + '...' : 'null');
+    
+    if (!reviewInput || reviewInput.trim().length === 0) {
+      return res.status(400).json({ 
+        error: 'Нужно передать resumeText или condensed',
+        reviewInputLength: reviewInput ? reviewInput.length : 0
+      });
+    }
     
     const cacheKey = `review:${reviewInput}`;
     const hit = getCached(cacheKey);
