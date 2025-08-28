@@ -1693,11 +1693,21 @@
                         html += `<li>${question}</li>`;
                     });
                     html += `</ul></div>`;
+                    
+                    // Добавляем окно для ответов на вопросы
+                    html += createQuestionsBox(data.questions, 'rm-review-answers');
                 }
                 
                 html += `</div>`;
                 
                 setBlock('res-review', html);
+                
+                // Загружаем сохраненные ответы после создания окна
+                if (data.questions?.length > 0) {
+                    setTimeout(() => {
+                        loadSavedAnswers('rm-review-answers', data.questions.length);
+                    }, 100);
+                }
             } catch (e) { 
                 setBlock('res-review','Ошибка оценки резюме: ' + e.message); 
             }
@@ -1804,6 +1814,171 @@
             } catch (e) { setBlock('res-match','Ошибка premium: ' + e.message); }
         }
         
+        // Функция создания окна ответов на вопросы
+        function createQuestionsBox(questions, storageKey) {
+            if (!questions || questions.length === 0) {
+                return '<div class="mt-4 text-white/70">Вопросов нет.</div>';
+            }
+            
+            let html = `
+                <div class="mt-4 bg-white/5 border border-white/10 rounded-3xl p-4 md:p-6">
+                    <div class="text-base md:text-lg font-semibold mb-3">
+                        Ответы на вопросы
+                    </div>
+                    <div class="space-y-4">
+            `;
+            
+            questions.forEach((question, index) => {
+                const answerId = `answer-${storageKey}-${index}`;
+                html += `
+                    <div class="flex flex-col gap-2">
+                        <div class="text-sm md:text-base font-medium">
+                            ${index + 1}. ${question}
+                        </div>
+                        <textarea
+                            id="${answerId}"
+                            placeholder="Ваш ответ…"
+                            rows="3"
+                            class="w-full rounded-2xl bg-[#252632] border border-white/10 px-4 py-3 outline-none focus:ring-2 focus:ring-violet-500/40"
+                            oninput="updateAnswerCount('${answerId}')"
+                        ></textarea>
+                        <div class="text-xs text-white/50" id="count-${answerId}">
+                            0 символов
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                    <div class="mt-4 flex flex-wrap gap-3">
+                        <button
+                            onclick="saveAnswers('${storageKey}', ${questions.length})"
+                            class="px-5 py-2.5 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white"
+                        >
+                            Сохранить ответы
+                        </button>
+                        <button
+                            onclick="copyAllAnswers('${storageKey}', ${questions.length})"
+                            class="px-5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10"
+                        >
+                            Скопировать всё
+                        </button>
+                        <button
+                            onclick="clearAnswers('${storageKey}', ${questions.length})"
+                            class="px-5 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80"
+                        >
+                            Очистить
+                        </button>
+                        <span id="saved-status-${storageKey}" class="self-center text-sm text-emerald-400" style="display: none;">
+                            Сохранено локально
+                        </span>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // Функции для работы с ответами
+        function updateAnswerCount(textareaId) {
+            const textarea = document.getElementById(textareaId);
+            const countElement = document.getElementById('count-' + textareaId);
+            if (textarea && countElement) {
+                countElement.textContent = `${textarea.value.length} символов`;
+            }
+        }
+        
+        function saveAnswers(storageKey, questionCount) {
+            const answers = [];
+            for (let i = 0; i < questionCount; i++) {
+                const textarea = document.getElementById(`answer-${storageKey}-${i}`);
+                answers.push(textarea ? textarea.value : '');
+            }
+            
+            localStorage.setItem(storageKey, JSON.stringify(answers));
+            
+            // Показываем статус сохранения
+            const statusElement = document.getElementById(`saved-status-${storageKey}`);
+            if (statusElement) {
+                statusElement.style.display = 'inline';
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 3000);
+            }
+            
+            console.debug('answers saved:', answers);
+        }
+        
+        function clearAnswers(storageKey, questionCount) {
+            for (let i = 0; i < questionCount; i++) {
+                const textarea = document.getElementById(`answer-${storageKey}-${i}`);
+                if (textarea) {
+                    textarea.value = '';
+                    updateAnswerCount(`answer-${storageKey}-${i}`);
+                }
+            }
+            
+            localStorage.removeItem(storageKey);
+            
+            // Скрываем статус сохранения
+            const statusElement = document.getElementById(`saved-status-${storageKey}`);
+            if (statusElement) {
+                statusElement.style.display = 'none';
+            }
+        }
+        
+        async function copyAllAnswers(storageKey, questionCount) {
+            const questions = [];
+            const answers = [];
+            
+            // Получаем вопросы из текущего результата
+            const reviewElement = document.getElementById('res-review');
+            if (reviewElement) {
+                const questionElements = reviewElement.querySelectorAll('.review-questions li');
+                questionElements.forEach(el => questions.push(el.textContent));
+            }
+            
+            // Получаем ответы
+            for (let i = 0; i < questionCount; i++) {
+                const textarea = document.getElementById(`answer-${storageKey}-${i}`);
+                answers.push(textarea ? textarea.value : '');
+            }
+            
+            // Формируем текст для копирования
+            const text = questions
+                .map((q, i) => `Q${i + 1}: ${q}\nA${i + 1}: ${answers[i] || "—"}\n`)
+                .join("\n");
+            
+            try {
+                await navigator.clipboard.writeText(text);
+                // Можно добавить уведомление об успешном копировании
+            } catch (error) {
+                console.error('Ошибка копирования:', error);
+            }
+        }
+        
+        // Загружаем сохраненные ответы при создании окна
+        function loadSavedAnswers(storageKey, questionCount) {
+            try {
+                const saved = localStorage.getItem(storageKey);
+                if (saved) {
+                    const answers = JSON.parse(saved);
+                    if (Array.isArray(answers)) {
+                        for (let i = 0; i < Math.min(answers.length, questionCount); i++) {
+                            const textarea = document.getElementById(`answer-${storageKey}-${i}`);
+                            if (textarea) {
+                                textarea.value = answers[i] || '';
+                                updateAnswerCount(`answer-${storageKey}-${i}`);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки сохраненных ответов:', error);
+            }
+        }
+
         // Старые функции для совместимости (если нужны)
         async function runCombo() {
             try {
