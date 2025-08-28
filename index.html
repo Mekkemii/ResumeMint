@@ -1668,6 +1668,28 @@
                 }
                 
                 html += `</div>`;
+
+                // Нормализованный опыт
+                if (Array.isArray(data.normalized_experience) && data.normalized_experience.length) {
+                  html += `<div class="review-section"><b>Опыт (нормализован):</b><ul class="review-list">`;
+                  data.normalized_experience.slice(0, 6).forEach(exp => {
+                    const head = [exp.role, exp.company].filter(Boolean).join(' @ ');
+                    const period = exp.period ? ` (${exp.period})` : '';
+                    const bullets = Array.isArray(exp.bullets) ? exp.bullets.slice(0,3).join('; ') : '';
+                    const results = Array.isArray(exp.results) && exp.results.length ? ` · Результаты: ${exp.results.slice(0,2).join('; ')}` : '';
+                    html += `<li>${safeText(head + period)}${bullets ? ` — ${safeText(bullets)}` : ''}${results}</li>`;
+                  });
+                  html += `</ul></div>`;
+                }
+
+                // Предложения по достижениям
+                if (Array.isArray(data.achievements_suggestions) && data.achievements_suggestions.length) {
+                  html += `<div class="review-section"><b>Переписать достижения (с метриками):</b><ul class="review-list">`;
+                  data.achievements_suggestions.slice(0, 6).forEach(s => {
+                    html += `<li><i>${safeText(s.source)}</i><br/>⇒ ${safeText(s.rewrite)}<br/><span class="opacity-80">Почему: ${safeText(s.why)}</span></li>`;
+                  });
+                  html += `</ul></div>`;
+                }
                 
                 // Ключевые слова
                 if (data.keywords) {
@@ -1713,34 +1735,33 @@
                 const job = document.getElementById('compare-job')?.value?.trim();
                 if (!resume || !job) return setBlock('res-summary','Для матчинга нужны резюме и вакансия');
                 
-                const data = await postJSON('/api/job/compare', { resumeText: resume, jobText: job });
+                const data = await postJSON('/api/analyze', { resumeText: resume, jobText: job });
                 
                 // Формируем HTML для результатов
                 let html = '';
                 
-                // Информация о вакансии
-                if (data.job) {
-                    html += `<div class="job-info">`;
-                    html += `<b>Вакансия:</b>`;
-                    html += `<div class='opacity-80' style='margin-top:6px;'>${data.job.job_summary||''}</div>`;
-                    if (data.job.job_grade) {
-                        html += `<div style='margin-top:8px;'><b>Требуемый грейд:</b> ${data.job.job_grade.level}</div>`;
-                        html += `<div class='opacity-80 text-sm'>${safeText(data.job.job_grade.rationale)}</div>`;
-                    }
-                    html += `</div>`;
+                // Информация о вакансии (универсальная схема)
+                if (data.job_analysis) {
+                  html += `<div class="job-info">`;
+                  html += `<b>Требуемый грейд:</b> ${data.job_analysis.required_grade}`;
+                  if (Array.isArray(data.job_analysis.rationale) && data.job_analysis.rationale.length) {
+                    html += `<div class='opacity-80 text-sm' style='margin-top:6px;'>${safeText(data.job_analysis.rationale.join(' · '))}</div>`;
+                  }
+                  html += `</div>`;
                 }
                 
                 // Результаты сопоставления
                 if (data.match) {
-                    html += `<div class="match-info" style="margin-top: 16px;">`;
-                    html += `<b>Сопоставление:</b> ${data.match.match_percent||'-'}% · ${data.match.chances||'-'} · грейд: ${data.match.grade_fit||'-'}`;
-                    if (data.match.highlights?.length > 0) {
-                        html += `<div class='opacity-80' style='margin-top:6px;'><b>Сильные стороны:</b> ${data.match.highlights.slice(0,3).join(', ')}</div>`;
-                    }
-                    if (data.match.gaps?.length > 0) {
-                        html += `<div class='opacity-80' style='margin-top:4px;'><b>Что подтянуть:</b> ${data.match.gaps.slice(0,3).join(', ')}</div>`;
-                    }
+                  html += `<div class="match-info" style="margin-top: 16px;">`;
+                  html += `<b>Сопоставление:</b> покрытие ${data.match.coverage_ratio ?? '-'}% · итог: ${data.match.overall || '-'}`;
+                  if (Array.isArray(data.match.matrix) && data.match.matrix.length) {
+                    html += `<div class='opacity-80' style='margin-top:8px;'>`;
+                    html += `<b>Матрица требований (фрагмент):</b>`;
+                    const rows = data.match.matrix.slice(0, 5).map(r => `• ${r.requirement} — evidence: ${r.evidence}${r.comment ? ` (комментарий: ${r.comment})` : ''}`);
+                    html += `<div style='margin-top:4px; white-space:pre-wrap;'>${rows.join('\n')}</div>`;
                     html += `</div>`;
+                  }
+                  html += `</div>`;
                 }
                 
                 setBlock('res-summary', html);
@@ -1756,12 +1777,12 @@
                 const resume = document.getElementById('cover-resume')?.value?.trim();
                 const job = document.getElementById('cover-job')?.value?.trim();
                 if (!resume || !job) return setBlock('res-cover','Нужны выжимка резюме и описание вакансии');
-                const data = await postJSON('/api/cover-letter', {
-                    resume_summary: resume,
-                    job_summary: job,
-                    tone: 'профессиональный'
-                });
-                setBlock('res-cover',`<b>Сопроводительное:</b><div style='margin-top:6px; white-space:pre-wrap;'>${data.cover_letter}</div>`);
+                const data = await postJSON('/api/analyze', { resumeText: resume, jobText: job });
+                if (data.cover_letter) {
+                  setBlock('res-cover',`<b>Сопроводительное:</b><div style='margin-top:6px; white-space:pre-wrap;'>${data.cover_letter}</div>`);
+                } else {
+                  setBlock('res-cover','Сопроводительное не сгенерировано');
+                }
             } catch (e) { setBlock('res-cover','Ошибка письма: ' + e.message); }
         }
         
