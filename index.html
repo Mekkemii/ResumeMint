@@ -1625,29 +1625,22 @@
                 const resume = document.getElementById('review-resume')?.value?.trim();
                 if (!resume) return setBlock('res-review','Введите текст резюме');
                 
-                let data;
-                
-                // Автоматически ужимаем резюме если оно длинное (больше 2000 символов)
-                if (resume.length > 2000) {
-                    setBlock('res-review', 'Провожу анализ...');
-                    const condensed = await postJSON('/api/resume/condense', { resumeText: resume });
-                    data = await postJSON('/api/resume/review', { condensed });
-                } else {
-                    // Делаем оценку напрямую для коротких резюме
-                    setBlock('res-review', 'Провожу анализ...');
-                    data = await postJSON('/api/resume/review', { resumeText: resume });
-                }
+                setBlock('res-review', 'Провожу анализ...');
+                // Универсальный анализатор (резюме; jobText опционален)
+                const data = await postJSON('/api/analyze', { resumeText: resume });
                 
                 // Формируем HTML для вывода результата
                 let html = `<div class="review-result">`;
                 html += `<div class="review-header">`;
                 html += `<div><b>Грейд:</b> ${data.grade?.level || 'Не определен'}</div>`;
-                html += `<div class="grade-rationale">${safeText(data.grade?.rationale)}</div>`;
+                if (Array.isArray(data.grade?.rationale) && data.grade.rationale.length > 0) {
+                  html += `<div class="grade-rationale">${safeText(data.grade.rationale.join(' · '))}</div>`;
+                }
                 html += `</div>`;
                 
-                html += `<div class="review-scores">`;
-                html += `Оценки: текст ${data.scores?.writing || 0}/100, структура ${data.scores?.structure || 0}/100, общая ${data.scores?.overall || 0}/100`;
-                html += `</div>`;
+                if (data.summary) {
+                  html += `<div class="review-scores">${safeText(data.summary)}</div>`;
+                }
                 
                 html += `<div class="review-grid">`;
                 
@@ -1659,31 +1652,32 @@
                     html += `</ul></div>`;
                 }
                 
-                if (data.issues?.length > 0) {
+                if (Array.isArray(data.gaps) && data.gaps.length > 0) {
                     html += `<div class="review-section"><b>Недочёты:</b><ul class="review-list">`;
-                    data.issues.forEach(issue => {
-                        html += `<li>${issue}</li>`;
+                    data.gaps.forEach(g => {
+                        const line = [g.issue, g.fix].filter(Boolean).join(' — ');
+                        html += `<li>${line}</li>`;
                     });
                     html += `</ul></div>`;
                 }
                 
-                if (data.add?.length > 0) {
-                    html += `<div class="review-section"><b>Что добавить:</b><ul class="review-list">`;
-                    data.add.forEach(item => {
-                        html += `<li>${item}</li>`;
-                    });
-                    html += `</ul></div>`;
+                if (Array.isArray(data.ats_warnings) && data.ats_warnings.length > 0) {
+                  html += `<div class="review-section"><b>ATS предупреждения:</b><ul class="review-list">`;
+                  data.ats_warnings.forEach(w => { html += `<li>${w}</li>`; });
+                  html += `</ul></div>`;
                 }
                 
                 html += `</div>`;
                 
-                if (data.ats?.ats_score !== undefined) {
-                    html += `<div class="review-ats">`;
-                    html += `<b>ATS (срез):</b> ${data.ats.ats_score}/100`;
-                    if (data.ats.issues?.length > 0) {
-                        html += ` · ${data.ats.issues.slice(0, 5).join("; ")}`;
-                    }
-                    html += `</div>`;
+                // Ключевые слова
+                if (data.keywords) {
+                  const ks = [];
+                  if (Array.isArray(data.keywords.hard_skills) && data.keywords.hard_skills.length) ks.push(`Hard: ${data.keywords.hard_skills.slice(0,8).join(', ')}`);
+                  if (Array.isArray(data.keywords.tools) && data.keywords.tools.length) ks.push(`Tools: ${data.keywords.tools.slice(0,8).join(', ')}`);
+                  if (Array.isArray(data.keywords.domains) && data.keywords.domains.length) ks.push(`Domains: ${data.keywords.domains.slice(0,6).join(', ')}`);
+                  if (ks.length) {
+                    html += `<div class="review-ats"><b>Ключевые слова:</b> ${ks.join(' · ')}</div>`;
+                  }
                 }
                 
                 if (data.questions?.length > 0) {

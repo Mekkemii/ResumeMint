@@ -65,6 +65,14 @@ app.get('/', (req, res) => {
     });
 });
 
+// Mount unified analyzer route
+try {
+  const analyzeRouter = require('./routes/analyze');
+  app.use('/api', analyzeRouter);
+} catch (e) {
+  console.warn('Analyze route not mounted:', e?.message);
+}
+
 // Настройка multer для загрузки файлов
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
@@ -1306,6 +1314,64 @@ app.get('/api/health', (req, res) => {
     service: 'ResumeMint API',
     version: '1.0.0'
   });
+});
+
+// Strict evaluation endpoint (structured JSON + debug meta/raw)
+app.post('/api/evaluate', async (req, res) => {
+  try {
+    const resumeText = (req.body?.resume || '').trim();
+
+    if (!resumeText || resumeText.length < 40) {
+      return res.status(400).json({
+        error: 'EMPTY_RESUME',
+        message: "Не получен текст резюме. Отправьте поле 'resume' с непустым текстом."
+      });
+    }
+
+    // Детекция опыта и мягкая маркировка
+    const evidence = detectExperience(resumeText);
+    let reviewInput = resumeText;
+    if (evidence?.found && Array.isArray(evidence.spans) && evidence.spans.length > 0) {
+      reviewInput = injectExperienceMarkers(resumeText, evidence.spans);
+    }
+
+    const result = await evaluateResumeStructured(reviewInput, evidence);
+    const raw = result.raw_model_output || '{}';
+    const data = result.evaluation || {};
+
+    // Проверяем ключевые поля scores; если нет — явно сообщаем об ошибке модели
+    if (
+      !data?.scores ||
+      typeof data.scores.text !== 'number' ||
+      typeof data.scores.structure !== 'number'
+    ) {
+      return res.status(502).json({
+        error: 'BAD_MODEL_OUTPUT',
+        message: 'Модель вернула неожиданный формат. См. raw_model_output.',
+        raw_model_output: raw,
+        meta: result.meta || { model: result.model || null, system_fingerprint: result.system_fingerprint || null }
+      });
+    }
+
+    // Досчитываем overall при необходимости
+    if (typeof data.scores.overall !== 'number') {
+      const t = Math.max(0, Math.min(100, Number(data.scores.text)));
+      const s = Math.max(0, Math.min(100, Number(data.scores.structure)));
+      data.scores.overall = Math.round(0.5 * t + 0.5 * s);
+    }
+
+    return res.json({
+      meta: result.meta || { model: result.model || null, system_fingerprint: result.system_fingerprint || null, temperature: 0.2, seed: 42, ts: new Date().toISOString() },
+      raw_model_output: raw,
+      data
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      error: 'SERVER_ERROR',
+      message: e?.message || 'Unknown error'
+    });
+  }
 });
 
 // 404 handler
