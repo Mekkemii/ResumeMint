@@ -25,6 +25,7 @@ const { prepareText } = require('./services/preprocess');
 const { detectExperience, injectExperienceMarkers } = require('./utils/experience');
 const { safeExtractJson } = require('./utils/safeJson');
 const { toReviewDTO } = require('./utils/reviewMapper');
+const { evaluateResumeStructured } = require('./services/openaiStructured');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
@@ -1240,33 +1241,23 @@ LINKS: ${(c.links||[]).join(", ")}
     const hit = getCached(cacheKey);
     if (hit) return res.json(hit);
     
-    const systemPrompt = sysResumeReview();
-    const userPrompt = userResumeReview(reviewInput, evidence);
+    // Используем новый сервис с Structured Outputs
+    const result = await evaluateResumeStructured(reviewInput, evidence);
     
-    console.log('System prompt:', systemPrompt);
-    console.log('User prompt length:', userPrompt ? userPrompt.length : 0);
-    
-    const { json, text } = await chatJson([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
-    ], { max_tokens: 1100, temperature: 0.2 });
-    
-    // Диагностика (на dev)
-    if (process.env.NODE_ENV !== "production") {
-      console.debug("LLM raw response:", text);
+    // Логируем для диагностики
+    console.log('=== REVIEW RESULT ===');
+    console.log('Model:', result.model);
+    console.log('System fingerprint:', result.system_fingerprint);
+    console.log('Usage:', result.usage);
+    if (result.error) {
+      console.log('Error:', result.error);
     }
     
-    // Безопасное извлечение JSON, если модель вернула текст с JSON внутри
-    const model = json ?? safeExtractJson(text) ?? {};
-    
-    // Приводим к DTO с безопасным парсингом оценок
-    const dto = toReviewDTO(model);
-    
     // Кэшируем результат
-    setCached(cacheKey, dto);
+    setCached(cacheKey, result.evaluation);
     
     // Пользователю отправляем структурированные данные
-    res.json(dto);
+    res.json(result.evaluation);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
