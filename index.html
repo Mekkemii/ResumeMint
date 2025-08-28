@@ -1428,13 +1428,15 @@
             const compareResume = document.getElementById('compare-resume')?.value?.trim();
             const compareJob = document.getElementById('compare-job')?.value?.trim();
             const compareBtn = document.querySelector('[onclick="runCompareFromPanel()"]');
-            if (compareBtn) compareBtn.disabled = !compareResume || !compareJob;
+            const jdTooShort = (compareJob || '').length < 150;
+            if (compareBtn) compareBtn.disabled = !compareResume || !compareJob || jdTooShort;
             
             // Cover
             const coverResume = document.getElementById('cover-resume')?.value?.trim();
             const coverJob = document.getElementById('cover-job')?.value?.trim();
             const coverBtn = document.querySelector('[onclick="runCoverFromPanel()"]');
-            if (coverBtn) coverBtn.disabled = !coverResume || !coverJob;
+            const coverJdTooShort = (coverJob || '').length < 150;
+            if (coverBtn) coverBtn.disabled = !coverResume || !coverJob || coverJdTooShort;
             
             // Premium
             const premiumResume = document.getElementById('premium-resume')?.value?.trim();

@@ -4,6 +4,7 @@ const express = require('express');
 const OpenAI = require('openai');
 const { toPlainText, normalizeExperience } = require('../services/normalize');
 const { safeExtractJson } = require('../utils/safeJson');
+const { extractRelevantJD } = require('../jd');
 
 const router = express.Router();
 
@@ -23,6 +24,34 @@ async function chatJSON(messages) {
   });
   return res.choices?.[0]?.message?.content || '{}';
 }
+function hasJobAddon(obj) {
+  return obj && obj.job_analysis && obj.match && typeof obj.cover_letter === 'string';
+}
+
+async function repairJobAddon(baseJSON, prompt, normalized, jobText) {
+  const repairMsg = [
+    { role: 'system', content: prompt },
+    { role: 'user', content:
+`Ниже базовый JSON анализа резюме (без полей вакансии).
+Твоя задача: ДОФОРМИРОВАТЬ ТОЛЬКО недостающие ключи job_analysis, match, cover_letter,
+учитывая <RESUME_TEXT>, <JOB_TEXT> и правила.
+Верни СТРОГО JSON с этими тремя ключами (и только ими).
+
+<RESUME_TEXT>
+${normalized}
+</RESUME_TEXT>
+
+<JOB_TEXT>
+${jobText || ''}
+</JOB_TEXT>
+
+<BASE_JSON>
+${JSON.stringify(baseJSON)}
+</BASE_JSON>` }
+  ];
+  const raw = await chatJSON(repairMsg);
+  return safeExtractJson(raw);
+}
 
 router.post('/analyze', async (req, res) => {
   try {
@@ -39,10 +68,11 @@ router.post('/analyze', async (req, res) => {
     const promptPath = path.join(__dirname, '..', 'prompts', 'universal_resume_v3_2.md');
     const systemPrompt = await fs.readFile(promptPath, 'utf8');
 
-    const mode = jobText && String(jobText).trim() ? 'resume_plus_job' : 'resume_only';
+    const cleanedJob = extractRelevantJD(jobText ? String(jobText) : '');
+    const mode = cleanedJob.trim() ? 'resume_plus_job' : 'resume_only';
     const userContent =
       `<RESUME_TEXT>\n${normalized}\n</RESUME_TEXT>\n` +
-      `<JOB_TEXT>\n${jobText ? String(jobText) : ''}\n</JOB_TEXT>\n` +
+      `<JOB_TEXT>\n${cleanedJob}\n</JOB_TEXT>\n` +
       `<MODE>${mode}</MODE>`;
 
     const jsonStr = await chatJSON([
@@ -57,10 +87,13 @@ router.post('/analyze', async (req, res) => {
       return res.status(422).json({ error: 'BAD_MODEL_OUTPUT', message: 'LLM вернул не-JSON', raw_model_output: jsonStr });
     }
 
-    // Soft schema validation for modes: require match/cover in resume_plus_job
-    if (mode === 'resume_plus_job') {
-      if (!parsed || typeof parsed !== 'object' || !parsed.match || !parsed.cover_letter || !parsed.job_analysis) {
-        return res.status(422).json({ error: 'SCHEMA_MISMATCH', message: 'Отсутствуют job_analysis/match/cover_letter', raw_model_output: parsed });
+    // Try to repair missing job addon for resume_plus_job
+    if (mode === 'resume_plus_job' && !hasJobAddon(parsed)) {
+      try {
+        const repaired = await repairJobAddon(parsed, systemPrompt, normalized, cleanedJob);
+        parsed = { ...parsed, ...repaired };
+      } catch (e) {
+        return res.status(422).json({ error: 'SCHEMA_MISMATCH', message: 'Отсутствуют job_analysis/match/cover_letter и не удалось достроить на втором проходе', raw_model_output: parsed });
       }
     }
 
