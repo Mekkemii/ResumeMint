@@ -11,6 +11,11 @@ function parseScore(v) {
     const mm = v.match(/(\d{1,3})(?=\s*(?:\/\s*100|%|$))/);
     if (mm) return clamp(Number(mm[1]));
     
+    // Ловим "80 из 100" - берём первое число
+    const izMatch = v.match(/(\d{1,3})\s+из\s+\d{1,3}/);
+    if (izMatch) return clamp(Number(izMatch[1]));
+    
+    // Ловим любое число, но предпочитаем числа до "из" или "/"
     const any = v.match(/(\d{1,3})/);
     if (any) return clamp(Number(any[1]));
   }
