@@ -42,6 +42,7 @@ function detectExperience(text) {
 
   // 1) Поиск явных заголовков опытных разделов
   for (let i = 0; i < clean.length; i++) {
+    const line = clean[i].toLowerCase();
     if (EXP_HEADERS.some(h => h.test(clean[i]))) {
       // Собираем блок до следующего "шумного" заголовка
       let j = i + 1;
@@ -57,7 +58,7 @@ function detectExperience(text) {
     }
   }
 
-  // 2) Поиск пар "даты + роль/компания/обязанности" — часто это HH формат
+  // 2) Поиск строк с датами и признаками опыта (HH формат)
   for (let i = 0; i < clean.length; i++) {
     const s = clean[i];
     if (DATE_PATTERN.test(s)) {
@@ -78,6 +79,34 @@ function detectExperience(text) {
         (POSITION_WORDS.test(s) && DUTY_WORDS.test(s)) ||
         (COMPANY_WORDS.test(s) && ACH_WORDS.test(s))) {
       if (!hits.includes(i)) hits.push(i);
+    }
+  }
+
+  // 4) Поиск строк с датами в начале (формат "2022 - н.в. | Должность | Компания")
+  for (let i = 0; i < clean.length; i++) {
+    const s = clean[i];
+    if (/^\d{4}\s*[-–—]\s*(н\.в\.|наст\.|настоящее время|present|current|\d{4})/i.test(s)) {
+      if (POSITION_WORDS.test(s) || COMPANY_WORDS.test(s)) {
+        if (!hits.includes(i)) hits.push(i);
+        spans.push({ start: i, end: Math.min(clean.length - 1, i + 3) });
+      }
+    }
+  }
+
+  // 5) Поиск строк с должностями и компаниями (даже без дат)
+  for (let i = 0; i < clean.length; i++) {
+    const s = clean[i];
+    // Проверяем, что это не заголовок раздела
+    const isHeader = NOISE_HEADERS.some(h => h.test(s)) || EXP_HEADERS.some(h => h.test(s));
+    if (!isHeader && POSITION_WORDS.test(s) && COMPANY_WORDS.test(s)) {
+      if (!hits.includes(i)) hits.push(i);
+      // Ищем связанные строки (обязанности, достижения)
+      let j = i + 1;
+      while (j < clean.length && j < i + 5 && 
+             (DUTY_WORDS.test(clean[j]) || ACH_WORDS.test(clean[j]) || clean[j].startsWith('•') || clean[j].startsWith('-'))) {
+        j++;
+      }
+      spans.push({ start: i, end: j - 1 });
     }
   }
 
