@@ -82,9 +82,16 @@ async function evaluateResumeStructured(resumeText, evidence = {}) {
 
     return {
       evaluation,
+      raw_model_output: content,
       usage: response.usage,
       model: response.model,
-      system_fingerprint: response.system_fingerprint
+      system_fingerprint: response.system_fingerprint,
+      meta: {
+        model: response.model,
+        temperature: 0.2,
+        seed: 42,
+        ts: new Date().toISOString()
+      }
     };
 
   } catch (error) {
@@ -95,7 +102,7 @@ async function evaluateResumeStructured(resumeText, evidence = {}) {
       evaluation: {
         grade: {
           level: "Unknown",
-          rationale: "Ошибка при анализе резюме"
+          reason: "Ошибка при анализе резюме"
         },
         scores: {
           text: null,
@@ -105,16 +112,19 @@ async function evaluateResumeStructured(resumeText, evidence = {}) {
         strengths: ["Не удалось проанализировать резюме"],
         gaps: ["Ошибка в системе анализа"],
         add: ["Попробуйте позже"],
-        ats: {
-          score: null,
-          notes: "Ошибка при анализе"
-        },
         questions: ["Что произошло при анализе резюме?"]
       },
       error: error.message,
+      raw_model_output: null,
       usage: null,
       model: null,
-      system_fingerprint: null
+      system_fingerprint: null,
+      meta: {
+        model: null,
+        temperature: 0.2,
+        seed: 42,
+        ts: new Date().toISOString()
+      }
     };
   }
 }

@@ -15,12 +15,12 @@ const resumeEvaluationSchema = {
           type: "string",
           enum: ["Junior", "Middle", "Senior", "Lead"]
         },
-        rationale: {
+        reason: {
           type: "string",
           maxLength: 500
         }
       },
-      required: ["level", "rationale"]
+      required: ["level", "reason"]
     },
     scores: {
       type: "object",
@@ -68,22 +68,7 @@ const resumeEvaluationSchema = {
       },
       maxItems: 7
     },
-    ats: {
-      type: "object",
-      additionalProperties: false,
-      properties: {
-        score: {
-          type: "integer",
-          minimum: 0,
-          maximum: 100
-        },
-        notes: {
-          type: "string",
-          maxLength: 300
-        }
-      },
-      required: ["score", "notes"]
-    },
+
     questions: {
       type: "array",
       items: {
@@ -93,7 +78,7 @@ const resumeEvaluationSchema = {
       maxItems: 6
     }
   },
-  required: ["grade", "scores", "strengths", "gaps", "add", "ats", "questions"]
+  required: ["grade", "scores", "strengths", "gaps", "add", "questions"]
 };
 
 module.exports = { resumeEvaluationSchema };

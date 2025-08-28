@@ -1256,8 +1256,14 @@ LINKS: ${(c.links||[]).join(", ")}
     // Кэшируем результат
     setCached(cacheKey, result.evaluation);
     
-    // Пользователю отправляем структурированные данные
-    res.json(result.evaluation);
+    // Пользователю отправляем полную информацию для отладки
+    res.json({
+      data: result.evaluation,
+      meta: result.meta,
+      raw_model_output: result.raw_model_output,
+      usage: result.usage,
+      system_fingerprint: result.system_fingerprint
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
