@@ -1174,7 +1174,7 @@ LINKS: ${(c.links||[]).join(", ")}
 `.trim();
     } else {
       // Автоматическая предобработка резюме
-      const prep = await prepareText(resumeText || '', 'resume', chatJson);
+      const prep = await prepareText(resumeText || '', 'resume');
       reviewInput = prep.text;
       console.log('Preprocessing info:', prep);
     }
@@ -1208,7 +1208,7 @@ LINKS: ${(c.links||[]).join(", ")}
     if (condensed) {
       console.log('Preprocessing: condensed input');
     } else {
-      const prep = await prepareText(resumeText || '', 'resume', chatJson);
+      const prep = await prepareText(resumeText || '', 'resume');
       console.log('Preprocessing info:', prep);
     }
     

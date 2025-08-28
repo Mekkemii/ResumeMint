@@ -1719,23 +1719,7 @@
                 const job = document.getElementById('compare-job')?.value?.trim();
                 if (!resume || !job) return setBlock('res-summary','Для матчинга нужны резюме и вакансия');
                 
-                // Автоматически ужимаем длинные тексты
-                let resumeText = resume;
-                let jobText = job;
-                
-                if (resume.length > 2000) {
-                    setBlock('res-summary', 'Провожу анализ...');
-                    const condensed = await postJSON('/api/resume/condense', { resumeText: resume });
-                    resumeText = JSON.stringify(condensed);
-                }
-                
-                if (job.length > 2000) {
-                    setBlock('res-summary', 'Провожу анализ...');
-                    // Для вакансий используем простую обрезку
-                    jobText = job.substring(0, 2000) + (job.length > 2000 ? '...' : '');
-                }
-                
-                const data = await postJSON('/api/job/compare', { resumeText: resumeText, jobText: jobText });
+                const data = await postJSON('/api/job/compare', { resumeText: resume, jobText: job });
                 
                 // Формируем HTML для результатов
                 let html = '';
@@ -1793,23 +1777,7 @@
                 const job = document.getElementById('premium-job')?.value?.trim();
                 if (!resume || !job) return setBlock('res-match','Нужны резюме и вакансия');
                 
-                // Автоматически ужимаем длинные тексты
-                let resumeText = resume;
-                let jobText = job;
-                
-                if (resume.length > 2000) {
-                    setBlock('res-match', 'Провожу анализ...');
-                    const condensed = await postJSON('/api/resume/condense', { resumeText: resume });
-                    resumeText = JSON.stringify(condensed);
-                }
-                
-                if (job.length > 2000) {
-                    setBlock('res-match', 'Провожу анализ...');
-                    // Для вакансий используем простую обрезку
-                    jobText = job.substring(0, 2000) + (job.length > 2000 ? '...' : '');
-                }
-                
-                const data = await postJSON('/api/premium/oneshot', { resumeText: resumeText, jobText: jobText });
+                const data = await postJSON('/api/premium/oneshot', { resumeText: resume, jobText: job });
                 setBlock('res-match',`<b>Premium:</b> match ${data.match?.match_percent ?? '-'}%, grade ${data.resume?.grade ?? '-'}`);
             } catch (e) { setBlock('res-match','Ошибка premium: ' + e.message); }
         }

@@ -1,41 +1,33 @@
 const { estimateTokens } = require('../utils/tokens');
-const { fastCondense } = require('../utils/condense');
-const { llmCondenseIfHuge } = require('./llmCondense');
 
 /**
- * Подготавливает текст для анализа с автоматическим ужиманием
+ * Подготавливает текст для анализа с только нормализацией (без ужатия)
  * @param {string} text - исходный текст
  * @param {string} kind - тип текста ("resume" или "jd")
- * @param {Function} chatJson - функция для LLM запросов
- * @returns {Promise<Object>} информация о предобработке
+ * @returns {Object} информация о предобработке
  */
-async function prepareText(text, kind, chatJson) {
+function normalizeOnly(text) {
+  return (text || "").replace(/\r/g, "\n").trim();
+}
+
+async function prepareText(text, kind) {
   const originalTokens = estimateTokens(text || "");
-  let out = text || "";
-  let method = "none";
+  const normalized = normalizeOnly(text);
 
-  // быстрый, бесплатный проход
-  const fast = fastCondense(out, kind);
-  if (fast !== out) { 
-    out = fast; 
-    method = "fast"; 
-  }
-
-  // если всё ещё огромный — мини-LLM-ужимка
-  if (chatJson) {
-    const llm = await llmCondenseIfHuge(out, kind, chatJson);
-    if (llm !== out) { 
-      out = llm; 
-      method = "llm"; 
-    }
+  // защита от переполнения контекста — лучше честно сказать пользователю
+  const limit = Number(process.env.CONTEXT_LIMIT_TOKENS || 100000);
+  if (estimateTokens(normalized) > limit) {
+    const err = new Error("Слишком большой текст: сократите резюме/вакансию или отправьте частями.");
+    err.status = 413;
+    throw err;
   }
 
   return {
     originalTokens,
-    finalTokens: estimateTokens(out),
-    condensed: method !== "none",
-    method,
-    text: out
+    finalTokens: estimateTokens(normalized),
+    condensed: false,
+    method: "none",
+    text: normalized,
   };
 }
 
