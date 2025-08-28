@@ -3,6 +3,7 @@ const path = require('path');
 const express = require('express');
 const OpenAI = require('openai');
 const { toPlainText, normalizeExperience } = require('../services/normalize');
+const { safeExtractJson } = require('../utils/safeJson');
 
 const router = express.Router();
 
@@ -51,9 +52,16 @@ router.post('/analyze', async (req, res) => {
 
     let parsed;
     try {
-      parsed = JSON.parse(jsonStr);
+      parsed = safeExtractJson(jsonStr);
     } catch (e) {
-      return res.status(502).json({ error: 'BAD_MODEL_OUTPUT', message: 'LLM вернул не-JSON', raw_model_output: jsonStr });
+      return res.status(422).json({ error: 'BAD_MODEL_OUTPUT', message: 'LLM вернул не-JSON', raw_model_output: jsonStr });
+    }
+
+    // Soft schema validation for modes: require match/cover in resume_plus_job
+    if (mode === 'resume_plus_job') {
+      if (!parsed || typeof parsed !== 'object' || !parsed.match || !parsed.cover_letter || !parsed.job_analysis) {
+        return res.status(422).json({ error: 'SCHEMA_MISMATCH', message: 'Отсутствуют job_analysis/match/cover_letter', raw_model_output: parsed });
+      }
     }
 
     return res.json(parsed);

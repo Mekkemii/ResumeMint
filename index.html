@@ -1382,6 +1382,7 @@
         
         function openPanel(panel) {
             currentPanel = panel;
+            clearOutputs();
             updatePanelVisibility();
             
             // Фокус на первое поле в открытой панели
@@ -1440,6 +1441,16 @@
             const premiumJob = document.getElementById('premium-job')?.value?.trim();
             const premiumBtn = document.querySelector('[onclick="runPremiumFromPanel()"]');
             if (premiumBtn) premiumBtn.disabled = !premiumResume || !premiumJob;
+        }
+
+        // Полный сброс выводов (не затрагивает ввод)
+        function clearOutputs() {
+            setBlock('res-review', '');
+            setBlock('res-summary', '');
+            setBlock('res-match', '');
+            setBlock('res-cover', '');
+            const err = document.getElementById('error');
+            if (err) { err.textContent = ''; err.style.display = 'none'; }
         }
         
         // Обработчики файлов для каждой панели
@@ -1626,6 +1637,9 @@
                 if (!resume) return setBlock('res-review','Введите текст резюме');
                 
                 setBlock('res-review', 'Провожу анализ...');
+                const btn = document.querySelector('[onclick="runReviewFromPanel()"]');
+                const prev = btn ? btn.textContent : '';
+                if (btn) { btn.disabled = true; btn.textContent = 'Считаем…'; }
                 // Универсальный анализатор (резюме; jobText опционален)
                 const data = await postJSON('/api/analyze', { resumeText: resume });
                 
@@ -1717,6 +1731,7 @@
                 html += `</div>`;
                 
                 setBlock('res-review', html);
+                if (btn) { btn.disabled = false; btn.textContent = prev; }
                 
                 // Загружаем сохраненные ответы после создания окна
                 if (data.questions?.length > 0) {
@@ -1734,7 +1749,9 @@
                 const resume = document.getElementById('compare-resume')?.value?.trim();
                 const job = document.getElementById('compare-job')?.value?.trim();
                 if (!resume || !job) return setBlock('res-summary','Для матчинга нужны резюме и вакансия');
-                
+                const btn = document.querySelector('[onclick="runCompareFromPanel()"]');
+                const prev = btn ? btn.textContent : '';
+                if (btn) { btn.disabled = true; btn.textContent = 'Считаем матчинг…'; }
                 const data = await postJSON('/api/analyze', { resumeText: resume, jobText: job });
                 
                 // Формируем HTML для результатов
@@ -1765,6 +1782,7 @@
                 }
                 
                 setBlock('res-summary', html);
+                if (btn) { btn.disabled = false; btn.textContent = prev; }
             } catch (e) { setBlock('res-summary','Ошибка матчинга: ' + e.message); }
         }
         
@@ -1777,12 +1795,16 @@
                 const resume = document.getElementById('cover-resume')?.value?.trim();
                 const job = document.getElementById('cover-job')?.value?.trim();
                 if (!resume || !job) return setBlock('res-cover','Нужны выжимка резюме и описание вакансии');
+                const btn = document.querySelector('[onclick="runCoverFromPanel()"]');
+                const prev = btn ? btn.textContent : '';
+                if (btn) { btn.disabled = true; btn.textContent = 'Генерируем письмо…'; }
                 const data = await postJSON('/api/analyze', { resumeText: resume, jobText: job });
                 if (data.cover_letter) {
                   setBlock('res-cover',`<b>Сопроводительное:</b><div style='margin-top:6px; white-space:pre-wrap;'>${data.cover_letter}</div>`);
                 } else {
                   setBlock('res-cover','Сопроводительное не сгенерировано');
                 }
+                if (btn) { btn.disabled = false; btn.textContent = prev; }
             } catch (e) { setBlock('res-cover','Ошибка письма: ' + e.message); }
         }
         
