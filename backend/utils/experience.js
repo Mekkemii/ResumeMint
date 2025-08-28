@@ -58,6 +58,46 @@ function detectExperience(text) {
     }
   }
 
+  // 1.5) Поиск заголовков в разных регистрах и с пробелами
+  for (let i = 0; i < clean.length; i++) {
+    const line = clean[i].toLowerCase().trim();
+    const normalizedLine = line.replace(/\s+/g, ' ');
+    
+    // Проверяем различные варианты написания заголовков
+    const isExpHeader = 
+      normalizedLine.includes('опыт работы') ||
+      normalizedLine.includes('профессиональный опыт') ||
+      normalizedLine.includes('карьера') ||
+      normalizedLine.includes('трудовая деятельность') ||
+      normalizedLine.includes('история работы') ||
+      normalizedLine.includes('работа') ||
+      normalizedLine.includes('проекты') ||
+      normalizedLine.includes('коммерческие проекты') ||
+      normalizedLine.includes('кейсы') ||
+      normalizedLine.includes('портфолио') ||
+      normalizedLine.includes('практика') ||
+      normalizedLine.includes('стажировка') ||
+      normalizedLine.includes('интернатура') ||
+      normalizedLine.includes('подработка') ||
+      normalizedLine.includes('фриланс') ||
+      normalizedLine.includes('консалтинг') ||
+      normalizedLine.includes('самозанят');
+    
+    if (isExpHeader) {
+      // Собираем блок до следующего "шумного" заголовка
+      let j = i + 1;
+      while (j < clean.length && 
+             !NOISE_HEADERS.some(n => n.test(clean[j])) && 
+             !EXP_HEADERS.some(h => h.test(clean[j]))) {
+        j++;
+      }
+      spans.push({ start: i, end: j - 1 });
+      for (let k = i; k < j; k++) {
+        if (!hits.includes(k)) hits.push(k);
+      }
+    }
+  }
+
   // 2) Поиск строк с датами и признаками опыта (HH формат)
   for (let i = 0; i < clean.length; i++) {
     const s = clean[i];
