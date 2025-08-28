@@ -23,6 +23,8 @@ const fs = require('fs').promises;
 const OpenAI = require('openai');
 const { prepareText } = require('./services/preprocess');
 const { detectExperience, injectExperienceMarkers } = require('./utils/experience');
+const { safeExtractJson } = require('./utils/safeJson');
+const { toReviewDTO } = require('./utils/reviewMapper');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
@@ -297,8 +299,8 @@ ${resumeText}`;
 
 // ===== ОЦЕНКА РЕЗЮМЕ (HR + Grade + ATS) =====
 function sysResumeReview() {
-  return `Всегда отвечай на русском языке.
-Строго возвращай данные только в указанном JSON-формате (ключи схемы на английском, содержимое по-русски).
+  return `Всегда отвечай на русском языке СОДЕРЖИМОМ, НО ключи JSON — строго на английском.
+Строго возвращай данные только в указанном JSON-формате.
 
 Политика доказательств:
 - Делай выводы только по фактам из текста.
@@ -306,15 +308,16 @@ function sysResumeReview() {
 - Если есть хотя бы косвенные признаки опыта (должности, компании, годы, проекты, стажировки, подработки) — перечисли их и используй в оценке.
 - Если факт не подтверждён текстом — помечай «не указано», а не делай догадок.
 
-Формат ответа — JSON со следующими полями:
+Верни РОВНО такой JSON (без текста вокруг):
+
 {
   "grade": { "level": "Junior|Middle|Senior|Lead", "rationale": "..." },
-  "strengths": [ "...", "..." ],
-  "gaps": [ "...", "..." ],
-  "add": [ "...", "..." ],
+  "scores": { "text": 0-100, "structure": 0-100, "overall": 0-100 },
+  "strengths": ["..."],
+  "gaps": ["..."],
+  "add": ["..."],
   "ats": { "score": 0-100, "notes": "..." },
-  "questions": [ "...", "..." ],
-  "evidence": { "experience_found": true|false, "lines": [ "...", "..." ] }
+  "questions": ["..."]
 }
 
 Ты — эксперт по резюме, ATS и грейдам. Отвечай ТОЛЬКО валидным JSON.`;
@@ -344,16 +347,16 @@ function userResumeReview(reviewInput, evidence) {
 1) Оцени качество и структуру резюме (кратко).
 2) Определи грейд кандидата и обоснуй.
 3) Дай ATS-срез: общий балл и главные проблемы (3–7).
-4) Сформируй списки: strengths (сильные), issues (недочёты), add (что добавить).
+4) Сформируй списки: strengths (сильные), gaps (недочёты), add (что добавить).
 5) Дай 3–6 уточняющих вопросов.
 
 ФОРМАТ (строго JSON):
 {
   "grade": { "level": "Junior|Middle|Senior|Lead", "rationale": "<=300" },
-  "scores": { "writing": 0-100, "structure": 0-100, "overall": 0-100 },
-  "ats": { "ats_score": 0-100, "issues": ["..."] },
+  "scores": { "text": 0-100, "structure": 0-100, "overall": 0-100 },
+  "ats": { "score": 0-100, "notes": "..." },
   "strengths": ["..."],
-  "issues": ["..."],
+  "gaps": ["..."],
   "add": ["..."],
   "questions": ["..."]
 }
@@ -1243,27 +1246,27 @@ LINKS: ${(c.links||[]).join(", ")}
     console.log('System prompt:', systemPrompt);
     console.log('User prompt length:', userPrompt ? userPrompt.length : 0);
     
-    const { json, usage } = await chatJson([
+    const { json, text } = await chatJson([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
-    ], { max_tokens: 700, temperature: 0.2 });
+    ], { max_tokens: 1100, temperature: 0.2 });
     
-    // Гарантия формулировки, если модель всё же «сорвётся»
-    if (json?.grade?.rationale) {
-      json.grade.rationale = json.grade.rationale
-        .replace(/нет опыта работы/gi, "в тексте не найдено описание опыта");
+    // Диагностика (на dev)
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("LLM raw response:", text);
     }
     
-    // Логируем для отладки, но не отправляем пользователю
-    if (condensed) {
-      console.log('Preprocessing: condensed input');
-    } else {
-      const prep = await prepareText(resumeText || '', 'resume');
-      console.log('Preprocessing info:', prep);
-    }
+    // Безопасное извлечение JSON, если модель вернула текст с JSON внутри
+    const model = json ?? safeExtractJson(text) ?? {};
     
-    // Пользователю отправляем только полезные данные
-    res.json(json);
+    // Приводим к DTO с безопасным парсингом оценок
+    const dto = toReviewDTO(model);
+    
+    // Кэшируем результат
+    setCached(cacheKey, dto);
+    
+    // Пользователю отправляем структурированные данные
+    res.json(dto);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
