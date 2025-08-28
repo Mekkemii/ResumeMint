@@ -21,6 +21,7 @@ const mammoth = require('mammoth');
 const path = require('path');
 const fs = require('fs').promises;
 const OpenAI = require('openai');
+const { prepareText } = require('./services/preprocess');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
@@ -187,7 +188,11 @@ function userMatch(resumeSummary, jobSummary, resumeSkills, jobReqs) {
   return `ФОРМАТ:\n{\n  "match_percent": 0,\n  "gaps": [],\n  "highlights": [],\n  "explanation": ""\n}\nДАНО:\n- РЕЗЮМЕ: ${resumeSummary}\n- НАВЫКИ: ${JSON.stringify(resumeSkills)}\n- ВАКАНСИЯ summary: ${jobSummary}\n- ВАКАНСИЯ requirements: ${JSON.stringify(jobReqs)}`;
 }
 
-function sysCover() { return 'Ты — генератор сопроводительных писем. ТОЛЬКО JSON.'; }
+function sysCover() { 
+  return `Всегда отвечай на русском языке. 
+Возвращай только текст сопроводительного письма без служебных пояснений.
+Ты — генератор сопроводительных писем. ТОЛЬКО JSON.`; 
+}
 function userCover(resumeSummary, jobSummary, tone) {
   return `Сформируй короткое сопроводительное (110-160 слов), тон: ${tone || 'профессиональный'}.\nФОРМАТ: { "cover_letter": "..." }\nДАНО:\n- РЕЗЮМЕ: ${resumeSummary}\n- ВАКАНСИЯ: ${jobSummary}`;
 }
@@ -204,7 +209,11 @@ function userCombo(resumeText, jobText) {
 }
 
 // ===== МАТЧИНГ ВАКАНСИИ (JD-анализ + требуемый грейд + сопоставление) =====
-function sysJobCompare() { return 'Ты — карьерный ассистент и рекрутер. Отвечай ТОЛЬКО валидным JSON.'; }
+function sysJobCompare() { 
+  return `Всегда отвечай на русском языке. 
+Строго возвращай данные только в указанном JSON-формате (ключи схемы на английском, содержимое по-русски).
+Ты — карьерный ассистент и рекрутер. Отвечай ТОЛЬКО валидным JSON.`; 
+}
 function userJobCompare(resumeText, jobText) {
   return `ЗАДАЧА:
 1) Разбери вакансию (JD): краткое summary, "requirements" (5–12), "nice_to_have" (0–8).
@@ -287,7 +296,9 @@ ${resumeText}`;
 
 // ===== ОЦЕНКА РЕЗЮМЕ (HR + Grade + ATS) =====
 function sysResumeReview() { 
-  return 'Ты — эксперт по резюме, ATS и грейдам. Отвечай ТОЛЬКО валидным JSON.'; 
+  return `Всегда отвечай на русском языке. 
+Строго возвращай данные только в указанном JSON-формате (ключи схемы на английском, содержимое по-русски).
+Ты — эксперт по резюме, ATS и грейдам. Отвечай ТОЛЬКО валидным JSON.`; 
 }
 function userResumeReview(reviewInput) {
   if (!reviewInput || typeof reviewInput !== 'string') {
@@ -934,19 +945,27 @@ app.post('/api/job/compare', async (req, res) => {
   try {
     const { resumeText, jobText } = req.body;
     if (!resumeText || !jobText) return res.status(400).json({ error: 'Нужны resumeText и jobText' });
-    const resumeT = smartTrim(resumeText, 8000);
-    const jobT = smartTrim(jobText, 8000);
-    const cacheKey = `compare:${resumeT}:${jobT}`;
+    
+    // Автоматическая предобработка резюме и вакансии
+    const [rPrep, jPrep] = await Promise.all([
+      prepareText(resumeText, 'resume', chatJson),
+      prepareText(jobText, 'jd', chatJson)
+    ]);
+    
+    const cacheKey = `compare:${rPrep.text}:${jPrep.text}`;
     const hit = getCached(cacheKey);
     if (hit) return res.json(hit);
 
     const { json, usage } = await chatJson([
       { role: 'system', content: sysJobCompare() },
-      { role: 'user', content: userJobCompare(resumeT, jobT) }
+      { role: 'user', content: userJobCompare(rPrep.text, jPrep.text) }
     ], { max_tokens: 1100, temperature: 0.2 });
-    const out = { ...json, usage };
-    setCached(cacheKey, out);
-    res.json(out);
+    
+    // Логируем для отладки
+    console.log('Preprocessing info:', { resume: rPrep, jd: jPrep });
+    
+    // Пользователю отправляем только полезные данные
+    res.json(json);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -964,9 +983,9 @@ app.post('/api/match', async (req, res) => {
       { role: 'system', content: sysMatch() },
       { role: 'user', content: userMatch(resume_summary, job_summary, hard_skills, requirements) }
     ], { max_tokens: 500, temperature: 0.2 });
-    const out = { ...json, usage };
-    setCached(cacheKey, out);
-    res.json(out);
+    
+    // Пользователю отправляем только полезные данные
+    res.json(json);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -984,9 +1003,9 @@ app.post('/api/cover-letter', async (req, res) => {
       { role: 'system', content: sysCover() },
       { role: 'user', content: userCover(resume_summary, job_summary, tone) }
     ], { max_tokens: 420, temperature: 0.25 });
-    const out = { ...json, usage };
-    setCached(cacheKey, out);
-    res.json(out);
+    
+    // Пользователю отправляем только полезные данные
+    res.json(json);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -996,19 +1015,27 @@ app.post('/api/premium/oneshot', async (req, res) => {
   try {
     const { resumeText, jobText } = req.body;
     if (!resumeText || !jobText) return res.status(400).json({ error: 'Нужны resumeText и jobText' });
-    const resumeT = smartTrim(resumeText, 9000);
-    const jobT = smartTrim(jobText, 9000);
-    const cacheKey = `oneshot:${resumeT}:${jobT}`;
+    
+    // Автоматическая предобработка резюме и вакансии
+    const [rPrep, jPrep] = await Promise.all([
+      prepareText(resumeText, 'resume', chatJson),
+      prepareText(jobText, 'jd', chatJson)
+    ]);
+    
+    const cacheKey = `oneshot:${rPrep.text}:${jPrep.text}`;
     const hit = getCached(cacheKey);
     if (hit) return res.json(hit);
 
     const { json, usage } = await chatJson([
       { role: 'system', content: sysPremium() },
-      { role: 'user', content: userPremium(resumeT, jobT) }
+      { role: 'user', content: userPremium(rPrep.text, jPrep.text) }
     ], { max_tokens: 1600, temperature: 0.25 });
-    const out = { ...json, usage };
-    setCached(cacheKey, out);
-    res.json(out);
+    
+    // Логируем для отладки
+    console.log('Preprocessing info:', { resume: rPrep, jd: jPrep });
+    
+    // Пользователю отправляем только полезные данные
+    res.json(json);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -1146,7 +1173,10 @@ LANGUAGES: ${(c.languages||[]).join(", ")}
 LINKS: ${(c.links||[]).join(", ")}
 `.trim();
     } else {
-      reviewInput = smartTrim(resumeText || '', 9000);
+      // Автоматическая предобработка резюме
+      const prep = await prepareText(resumeText || '', 'resume', chatJson);
+      reviewInput = prep.text;
+      console.log('Preprocessing info:', prep);
     }
     
     console.log('Review input length:', reviewInput ? reviewInput.length : 0);
@@ -1174,9 +1204,16 @@ LINKS: ${(c.links||[]).join(", ")}
       { role: 'user', content: userPrompt }
     ], { max_tokens: 700, temperature: 0.2 });
     
-    const out = { ...json, usage };
-    setCached(cacheKey, out);
-    res.json(out);
+    // Логируем для отладки, но не отправляем пользователю
+    if (condensed) {
+      console.log('Preprocessing: condensed input');
+    } else {
+      const prep = await prepareText(resumeText || '', 'resume', chatJson);
+      console.log('Preprocessing info:', prep);
+    }
+    
+    // Пользователю отправляем только полезные данные
+    res.json(json);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

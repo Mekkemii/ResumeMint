@@ -1629,11 +1629,12 @@
                 
                 // Автоматически ужимаем резюме если оно длинное (больше 2000 символов)
                 if (resume.length > 2000) {
-                    setBlock('res-review', 'Ужимаем резюме для экономии токенов...');
+                    setBlock('res-review', 'Провожу анализ...');
                     const condensed = await postJSON('/api/resume/condense', { resumeText: resume });
                     data = await postJSON('/api/resume/review', { condensed });
                 } else {
                     // Делаем оценку напрямую для коротких резюме
+                    setBlock('res-review', 'Провожу анализ...');
                     data = await postJSON('/api/resume/review', { resumeText: resume });
                 }
                 
@@ -1642,7 +1643,6 @@
                 html += `<div class="review-header">`;
                 html += `<div><b>Грейд:</b> ${data.grade?.level || 'Не определен'}</div>`;
                 html += `<div class="grade-rationale">${data.grade?.rationale || ''}</div>`;
-                html += `<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`;
                 html += `</div>`;
                 
                 html += `<div class="review-scores">`;
@@ -1714,13 +1714,13 @@
                 let jobText = job;
                 
                 if (resume.length > 2000) {
-                    setBlock('res-summary', 'Ужимаем резюме...');
+                    setBlock('res-summary', 'Провожу анализ...');
                     const condensed = await postJSON('/api/resume/condense', { resumeText: resume });
                     resumeText = JSON.stringify(condensed);
                 }
                 
                 if (job.length > 2000) {
-                    setBlock('res-summary', 'Ужимаем вакансию...');
+                    setBlock('res-summary', 'Провожу анализ...');
                     // Для вакансий используем простую обрезку
                     jobText = job.substring(0, 2000) + (job.length > 2000 ? '...' : '');
                 }
@@ -1733,7 +1733,7 @@
                 // Информация о вакансии
                 if (data.job) {
                     html += `<div class="job-info">`;
-                    html += `<b>Вакансия:</b><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`;
+                    html += `<b>Вакансия:</b>`;
                     html += `<div class='opacity-80' style='margin-top:6px;'>${data.job.job_summary||''}</div>`;
                     if (data.job.job_grade) {
                         html += `<div style='margin-top:8px;'><b>Требуемый грейд:</b> ${data.job.job_grade.level}</div>`;
@@ -1773,7 +1773,7 @@
                     job_summary: job,
                     tone: 'профессиональный'
                 });
-                setBlock('res-cover',`<b>Сопроводительное:</b><div style='margin-top:6px; white-space:pre-wrap;'>${data.cover_letter}</div><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`);
+                setBlock('res-cover',`<b>Сопроводительное:</b><div style='margin-top:6px; white-space:pre-wrap;'>${data.cover_letter}</div>`);
             } catch (e) { setBlock('res-cover','Ошибка письма: ' + e.message); }
         }
         
@@ -1788,19 +1788,19 @@
                 let jobText = job;
                 
                 if (resume.length > 2000) {
-                    setBlock('res-match', 'Ужимаем резюме...');
+                    setBlock('res-match', 'Провожу анализ...');
                     const condensed = await postJSON('/api/resume/condense', { resumeText: resume });
                     resumeText = JSON.stringify(condensed);
                 }
                 
                 if (job.length > 2000) {
-                    setBlock('res-match', 'Ужимаем вакансию...');
+                    setBlock('res-match', 'Провожу анализ...');
                     // Для вакансий используем простую обрезку
                     jobText = job.substring(0, 2000) + (job.length > 2000 ? '...' : '');
                 }
                 
                 const data = await postJSON('/api/premium/oneshot', { resumeText: resumeText, jobText: jobText });
-                setBlock('res-match',`<b>Premium:</b> match ${data.match?.match_percent ?? '-'}%, grade ${data.resume?.grade ?? '-'}<span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span>`);
+                setBlock('res-match',`<b>Premium:</b> match ${data.match?.match_percent ?? '-'}%, grade ${data.resume?.grade ?? '-'}`);
             } catch (e) { setBlock('res-match','Ошибка premium: ' + e.message); }
         }
         
@@ -1814,8 +1814,8 @@
                 // Сохраняем для следующих шагов
                 window.__resumeSummary = { resume_summary: data.resume?.resume_summary||'', hard_skills: data.resume?.hard_skills||[] };
                 window.__jobSummary = { job_summary: data.job?.job_summary||'', requirements: data.job?.requirements||[] };
-                setBlock('res-summary',`<b>Выжимка резюме:</b><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span><div class='opacity-80' style='margin-top:6px;'>${data.resume?.resume_summary||''}</div>`);
-                setBlock('res-job',`<b>Вакансия:</b><span class='token-badge'>• ${data.usage?.total_tokens||0} tok</span><div class='opacity-80' style='margin-top:6px;'>${data.job?.job_summary||''}</div>`);
+                setBlock('res-summary',`<b>Выжимка резюме:</b><div class='opacity-80' style='margin-top:6px;'>${data.resume?.resume_summary||''}</div>`);
+                setBlock('res-job',`<b>Вакансия:</b><div class='opacity-80' style='margin-top:6px;'>${data.job?.job_summary||''}</div>`);
                 setBlock('res-match',`<b>Match:</b> ${data.match?.match_percent||'-'}% — сильные: ${(data.match?.highlights||[]).slice(0,3).join(', ')}`);
             } catch (e) { setBlock('res-summary','Ошибка комбо: ' + e.message); }
         }
