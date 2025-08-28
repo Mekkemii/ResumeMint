@@ -286,7 +286,9 @@ ${resumeText}`;
 }
 
 // ===== ОЦЕНКА РЕЗЮМЕ (HR + Grade + ATS) =====
-function sysResumeReview() { return 'Ты — эксперт по резюме, ATS и грейдам. Отвечай ТОЛЬКО валидным JSON.'; }
+function sysResumeReview() { 
+  return 'Ты — эксперт по резюме, ATS и грейдам. Отвечай ТОЛЬКО валидным JSON.'; 
+}
 function userResumeReview(reviewInput) {
   if (!reviewInput || typeof reviewInput !== 'string') {
     console.error('userResumeReview: invalid input:', reviewInput);
@@ -1161,9 +1163,15 @@ LINKS: ${(c.links||[]).join(", ")}
     const hit = getCached(cacheKey);
     if (hit) return res.json(hit);
     
+    const systemPrompt = sysResumeReview();
+    const userPrompt = userResumeReview(reviewInput);
+    
+    console.log('System prompt:', systemPrompt);
+    console.log('User prompt length:', userPrompt ? userPrompt.length : 0);
+    
     const { json, usage } = await chatJson([
-      { role: 'system', content: sysResumeReview },
-      { role: 'user', content: userResumeReview(reviewInput) }
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
     ], { max_tokens: 700, temperature: 0.2 });
     
     const out = { ...json, usage };
