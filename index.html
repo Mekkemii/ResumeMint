@@ -1642,7 +1642,7 @@
                 let html = `<div class="review-result">`;
                 html += `<div class="review-header">`;
                 html += `<div><b>Грейд:</b> ${data.grade?.level || 'Не определен'}</div>`;
-                html += `<div class="grade-rationale">${data.grade?.rationale || ''}</div>`;
+                html += `<div class="grade-rationale">${safeText(data.grade?.rationale)}</div>`;
                 html += `</div>`;
                 
                 html += `<div class="review-scores">`;
@@ -1731,7 +1731,7 @@
                     html += `<div class='opacity-80' style='margin-top:6px;'>${data.job.job_summary||''}</div>`;
                     if (data.job.job_grade) {
                         html += `<div style='margin-top:8px;'><b>Требуемый грейд:</b> ${data.job.job_grade.level}</div>`;
-                        html += `<div class='opacity-80 text-sm'>${data.job.job_grade.rationale}</div>`;
+                        html += `<div class='opacity-80 text-sm'>${safeText(data.job.job_grade.rationale)}</div>`;
                     }
                     html += `</div>`;
                 }
@@ -1924,6 +1924,11 @@
             } catch (error) {
                 console.error('Ошибка копирования:', error);
             }
+        }
+        
+        // Функция безопасного отображения текста (защита от "нет опыта работы")
+        function safeText(text) {
+          return (text || "").replace(/нет опыта работы/gi, "в тексте не найдено описание опыта");
         }
         
         // Загружаем сохраненные ответы при создании окна

@@ -22,6 +22,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const OpenAI = require('openai');
 const { prepareText } = require('./services/preprocess');
+const { detectExperience } = require('./utils/experience');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
@@ -295,16 +296,38 @@ ${resumeText}`;
 }
 
 // ===== ОЦЕНКА РЕЗЮМЕ (HR + Grade + ATS) =====
-function sysResumeReview() { 
-  return `Всегда отвечай на русском языке. 
+function sysResumeReview() {
+  return `Всегда отвечай на русском языке.
 Строго возвращай данные только в указанном JSON-формате (ключи схемы на английском, содержимое по-русски).
-Ты — эксперт по резюме, ATS и грейдам. Отвечай ТОЛЬКО валидным JSON.`; 
+
+Политика доказательств:
+- Делай выводы только по фактам из текста.
+- Никогда не пиши «нет опыта работы», если это явно не сказано. Если раздел/описание опыта не найдено, пиши: «в тексте не найдено описание опыта/ролей».
+- Если есть хотя бы косвенные признаки опыта (должности, компании, годы, проекты, стажировки, подработки) — перечисли их и используй в оценке.
+- Если факт не подтверждён текстом — помечай «не указано», а не делай догадок.
+
+Формат ответа — JSON со следующими полями:
+{
+  "grade": { "level": "Junior|Middle|Senior|Lead", "rationale": "..." },
+  "strengths": [ "...", "..." ],
+  "gaps": [ "...", "..." ],
+  "add": [ "...", "..." ],
+  "ats": { "score": 0-100, "notes": "..." },
+  "questions": [ "...", "..." ],
+  "evidence": { "experience_found": true|false, "lines": [ "...", "..." ] }
 }
-function userResumeReview(reviewInput) {
+
+Ты — эксперт по резюме, ATS и грейдам. Отвечай ТОЛЬКО валидным JSON.`;
+}
+function userResumeReview(reviewInput, evidence) {
   if (!reviewInput || typeof reviewInput !== 'string') {
     console.error('userResumeReview: invalid input:', reviewInput);
     return 'Ошибка: неверные входные данные для анализа резюме';
   }
+  
+  const ev = evidence?.found
+    ? `\n\nНайденные признаки опыта (не вставлять в ответ дословно, использовать как ориентиры):\n- ${evidence.lines.join("\n- ")}\n`
+    : `\n\nВ тексте не найдено явного описания опыта: оцени аккуратно и пиши «не указано», если фактов нет.\n`;
   
   return `ЗАДАЧА:
 1) Оцени качество и структуру резюме (кратко).
@@ -325,7 +348,7 @@ function userResumeReview(reviewInput) {
 }
 
 ВХОДНЫЕ ДАННЫЕ (компактное резюме или сырой текст):
-${reviewInput}`;
+${reviewInput}${ev}`;
 }
 
 // ===== Helpers: smart trim and simple cache (15m) =====
@@ -1189,12 +1212,16 @@ LINKS: ${(c.links||[]).join(", ")}
       });
     }
     
+    // Детекция опыта работы
+    const evidence = detectExperience(reviewInput);
+    console.log('Experience evidence:', evidence);
+    
     const cacheKey = `review:${reviewInput}`;
     const hit = getCached(cacheKey);
     if (hit) return res.json(hit);
     
     const systemPrompt = sysResumeReview();
-    const userPrompt = userResumeReview(reviewInput);
+    const userPrompt = userResumeReview(reviewInput, evidence);
     
     console.log('System prompt:', systemPrompt);
     console.log('User prompt length:', userPrompt ? userPrompt.length : 0);
@@ -1203,6 +1230,12 @@ LINKS: ${(c.links||[]).join(", ")}
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
     ], { max_tokens: 700, temperature: 0.2 });
+    
+    // Гарантия формулировки, если модель всё же «сорвётся»
+    if (json?.grade?.rationale) {
+      json.grade.rationale = json.grade.rationale
+        .replace(/нет опыта работы/gi, "в тексте не найдено описание опыта");
+    }
     
     // Логируем для отладки, но не отправляем пользователю
     if (condensed) {
