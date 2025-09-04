@@ -18,6 +18,8 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const mammoth = require('mammoth');
+const pdfParse = require('pdf-parse');
+const Tesseract = require('tesseract.js');
 const path = require('path');
 const fs = require('fs').promises;
 const OpenAI = require('openai');
@@ -35,12 +37,44 @@ const PORT = process.env.PORT || 5000;
 console.log('=== INITIALIZATION DEBUG ===');
 console.log('OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
 console.log('OPENAI_API_KEY length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
-console.log('OPENAI_API_KEY start:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 10) + '...' : 'none');
 console.log('===========================');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'your-api-key-here'
 });
+
+// ===== Безопасная обработка ошибок OpenAI (маскировка ключей) =====
+function maskApiKeys(text) {
+  if (!text) return '';
+  try {
+    return String(text).replace(/sk-[A-Za-z0-9_\-]{10,}/g, 'sk-****');
+  } catch (_) {
+    return 'Ошибка';
+  }
+}
+
+function sanitizeOpenAIError(error) {
+  const status = error?.status || error?.response?.status || 500;
+  let message = error?.message || 'Ошибка внешнего AI сервиса';
+  message = maskApiKeys(message);
+
+  if (status === 401) {
+    message = 'Неверный или отсутствует OpenAI API ключ. Проверьте backend/.env.';
+  } else if (status === 429) {
+    message = 'Превышен лимит OpenAI API (429). Попробуйте позже.';
+  } else if (status === 400) {
+    message = 'Некорректный запрос к AI модели (400).';
+  } else if (status >= 500) {
+    message = 'Внешний AI сервис временно недоступен. Попробуйте позже.';
+  }
+
+  return { status: status || 500, message };
+}
+
+function respondModelError(res, error) {
+  const { status, message } = sanitizeOpenAIError(error);
+  return res.status(status).json({ error: message });
+}
 
 // Middleware
 app.use(cors());
@@ -96,7 +130,9 @@ const fileFilter = (req, file, cb) => {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/msword',
     'text/plain',
-    'application/pdf'
+    'application/pdf',
+    'image/jpeg',
+    'image/png'
   ];
   
   if (allowedTypes.includes(file.mimetype)) {
@@ -118,22 +154,53 @@ const upload = multer({
 // Memory upload for quick .docx parsing
 const uploadMemory = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1 } });
 
-// Простая функция для извлечения текста из файла
+// Извлечение текста: txt, pdf, docx, изображения (OCR)
 async function extractTextFromFile(file) {
   const filePath = file.path;
   const ext = path.extname(file.originalname).toLowerCase();
-  
-  if (ext === '.txt') {
-    return await fs.readFile(filePath, 'utf8');
-  } else if (ext === '.pdf') {
-    // Для PDF возвращаем заглушку, так как нужна библиотека pdf-parse
-    return `[PDF файл: ${file.originalname}] Содержимое PDF файла будет извлечено при полной настройке.`;
-  } else if (ext === '.docx' || ext === '.doc') {
-    // Для Word файлов возвращаем заглушку
-    return `[Word файл: ${file.originalname}] Содержимое Word файла будет извлечено при полной настройке.`;
+  const mime = file.mimetype;
+
+  try {
+    // Plain text
+    if (ext === '.txt' || mime === 'text/plain') {
+      return await fs.readFile(filePath, 'utf8');
+    }
+
+    // PDF via pdf-parse
+    if (ext === '.pdf' || mime === 'application/pdf') {
+      const buffer = await fs.readFile(filePath);
+      const data = await pdfParse(buffer);
+      return (data.text || '').trim() || '[PDF распознан, но текст пуст]';
+    }
+
+    // DOCX via mammoth
+    if (ext === '.docx' || mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      const { value } = await mammoth.extractRawText({ path: filePath });
+      return (value || '').trim() || '[DOCX распознан, но текст пуст]';
+    }
+
+    // Fallback OCR for images (jpeg/png)
+    const ocrEnabled = String(process.env.OCR_ENABLED || 'true').toLowerCase() !== 'false';
+    const isImage = mime === 'image/jpeg' || mime === 'image/png' || ext === '.jpg' || ext === '.jpeg' || ext === '.png';
+    if (ocrEnabled && isImage) {
+      try {
+      const langs = process.env.OCR_LANGS || 'eng+rus';
+        // Для tesseract.js v4.x используем правильный API
+        const result = await Tesseract.recognize(filePath, langs, {
+          logger: m => console.log('OCR:', m)
+        });
+      return (result?.data?.text || '').trim() || '[OCR распознан, но текст пуст]';
+      } catch (ocrError) {
+        console.error('OCR error:', ocrError);
+        return '[OCR ошибка: ' + (ocrError?.message || 'unknown') + ']';
+      }
+    }
+
+    return 'Неизвестный формат файла';
+  } catch (e) {
+    console.error('extractTextFromFile error:', e);
+    throw new Error('Не удалось извлечь текст файла: ' + (e?.message || 'unknown'));
   }
-  
-  return 'Неизвестный формат файла';
 }
 
 // ===== Helper: compact JSON chat =====
@@ -218,6 +285,86 @@ function userPremium(resumeText, jobText) {
 function sysCombo() { return 'Ты — карьерный ассистент. Отвечай ТОЛЬКО валидным JSON.'; }
 function userCombo(resumeText, jobText) {
   return `ЗАДАЧА:\n1) Выжимка резюме: кратко (<=800 символов) и до 12 hard_skills.\n2) Разбор вакансии: requirements (5–12 пунктов) и job_summary (<=600).\n3) Сопоставление: match_percent (0–100), highlights, gaps, explanation (<=300).\nФОРМАТ:\n{\n  "resume": { "resume_summary": "<=800", "hard_skills": [] },\n  "job": { "requirements": [], "job_summary": "<=600" },\n  "match": { "match_percent": 0, "highlights": [], "gaps": [], "explanation": "" }\n}\n\nРЕЗЮМЕ:\n${resumeText}\n\nВАКАНСИЯ:\n${jobText}`;
+}
+
+// Детальный матчинг вакансии с подробной обратной связью
+function sysDetailedMatch() { 
+  return `Ты — опытный HR-специалист и карьерный консультант. 
+Анализируй соответствие резюме требованиям вакансии максимально детально.
+Всегда отвечай на русском языке. Строго возвращай данные только в указанном JSON-формате.
+Ключи JSON — на английском, содержимое — на русском.`; 
+}
+
+function userDetailedMatch(resumeText, jobText) {
+  return `ЗАДАЧА: Детальный анализ соответствия резюме требованиям вакансии
+
+1) АНАЛИЗ ВАКАНСИИ:
+   - job_summary: краткое описание позиции (<=400 символов)
+   - requirements: основные требования (5-15 пунктов)
+   - nice_to_have: желательные навыки (0-8 пунктов)
+   - job_grade: требуемый уровень (Junior|Middle|Senior|Lead) + обоснование
+
+2) АНАЛИЗ РЕЗЮМЕ:
+   - candidate_summary: краткое описание кандидата (<=400 символов)
+   - candidate_grade: уровень кандидата + обоснование
+   - key_skills: ключевые навыки из резюме
+   - experience_summary: краткое описание опыта
+
+3) ДЕТАЛЬНОЕ СОПОСТАВЛЕНИЕ:
+   - overall_match: общий процент соответствия (0-100)
+   - grade_fit: "ниже требуемого" | "соответствует" | "выше требуемого"
+   - chances: "Высокие" | "Средние" | "Низкие"
+   - strengths: сильные стороны кандидата для этой позиции
+   - weaknesses: слабые стороны и недостатки
+   - missing_requirements: чего не хватает кандидату
+   - recommendations: конкретные рекомендации для улучшения
+
+4) ПОСТРОЧНЫЙ АНАЛИЗ ТРЕБОВАНИЙ:
+   - requirement: требование из вакансии
+   - evidence: доказательства из резюме (или "не найдено")
+   - status: "полное соответствие" | "частичное соответствие" | "не соответствует"
+   - score: оценка 0-100 для каждого требования
+   - comment: подробный комментарий с объяснением
+
+ФОРМАТ (строго JSON):
+{
+  "job": {
+    "job_summary": "<=400",
+    "requirements": ["..."],
+    "nice_to_have": ["..."],
+    "job_grade": { "level": "Junior|Middle|Senior|Lead", "rationale": "<=200" }
+  },
+  "candidate": {
+    "candidate_summary": "<=400",
+    "candidate_grade": { "level": "Junior|Middle|Senior|Lead", "rationale": "<=200" },
+    "key_skills": ["..."],
+    "experience_summary": "<=300"
+  },
+  "match": {
+    "overall_match": 0,
+    "grade_fit": "ниже требуемого|соответствует|выше требуемого",
+    "chances": "Высокие|Средние|Низкие",
+    "strengths": ["..."],
+    "weaknesses": ["..."],
+    "missing_requirements": ["..."],
+    "recommendations": ["..."]
+  },
+  "detailed_analysis": [
+    {
+      "requirement": "...",
+      "evidence": "...",
+      "status": "полное соответствие|частичное соответствие|не соответствует",
+      "score": 0,
+      "comment": "<=200"
+    }
+  ]
+}
+
+РЕЗЮМЕ:
+${resumeText}
+
+ВАКАНСИЯ:
+${jobText}`;
 }
 
 // ===== МАТЧИНГ ВАКАНСИИ (JD-анализ + требуемый грейд + сопоставление) =====
@@ -314,7 +461,7 @@ function sysResumeReview() {
 Политика доказательств:
 - Делай выводы только по фактам из текста.
 - Никогда не пиши «нет опыта работы», если это явно не сказано. Если раздел/описание опыта не найдено, пиши: «в тексте не найдено описание опыта/ролей».
-- Если есть хотя бы косвенные признаки опыта (должности, компании, годы, проекты, стажировки, подработки) — перечисли их и используй в оценке.
+- Если есть хотя бы косвенные признаки опыта (должности, компании, годы, проекты, стажировки, подработки) — перечисли и используй в оценке.
 - Если факт не подтверждён текстом — помечай «не указано», а не делай догадок.
 
 Верни РОВНО такой JSON (без текста вокруг):
@@ -558,8 +705,8 @@ ${resumeText}${additionalInfo}
     };
     
   } catch (error) {
-    console.error('❌ Ошибка OpenAI API:', error.message);
-    
+    console.error('❌ Ошибка OpenAI API:', maskApiKeys(error?.message || error));
+    console.error('Статус:', error?.status || error?.response?.status || 'n/a');
     // Возвращаем локальный анализ при ошибке API
     console.log('🔄 Используем локальный анализ из-за ошибки API');
     return performLocalAnalysis(resumeText, questions);
@@ -960,7 +1107,7 @@ app.post('/api/resume/analyze', async (req, res) => {
     setCached(cacheKey, out);
     res.json(out);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    respondModelError(res, e);
   }
 });
 
@@ -983,7 +1130,7 @@ app.post('/api/job/analyze', async (req, res) => {
     setCached(cacheKey, out);
     res.json(out);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    respondModelError(res, e);
   }
 });
 
@@ -1012,9 +1159,7 @@ app.post('/api/job/compare', async (req, res) => {
     
     // Пользователю отправляем только полезные данные
     res.json(json);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { respondModelError(res, e); }
 });
 
 app.post('/api/match', async (req, res) => {
@@ -1032,9 +1177,7 @@ app.post('/api/match', async (req, res) => {
     
     // Пользователю отправляем только полезные данные
     res.json(json);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { respondModelError(res, e); }
 });
 
 app.post('/api/cover-letter', async (req, res) => {
@@ -1052,9 +1195,7 @@ app.post('/api/cover-letter', async (req, res) => {
     
     // Пользователю отправляем только полезные данные
     res.json(json);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { respondModelError(res, e); }
 });
 
 app.post('/api/premium/oneshot', async (req, res) => {
@@ -1082,19 +1223,103 @@ app.post('/api/premium/oneshot', async (req, res) => {
     
     // Пользователю отправляем только полезные данные
     res.json(json);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { respondModelError(res, e); }
 });
 
 // Parse .docx to text (for accordion uploads)
 app.post('/api/parse/docx', uploadMemory.single('file'), async (req, res) => {
   try {
+    console.log('=== DOCX PARSING DEBUG ===');
+    console.log('File received:', req.file ? {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      bufferLength: req.file.buffer?.length
+    } : 'NO FILE');
+    
     if (!req.file) return res.status(400).json({ error: 'no file' });
-    const { value } = await mammoth.extractRawText({ buffer: req.file.buffer });
-    res.json({ text: (value || '').trim() });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
+    
+    // Проверяем, что файл действительно DOCX
+    const ext = path.extname(req.file.originalname || '').toLowerCase();
+    const mime = req.file.mimetype || '';
+    
+    console.log('File validation:', { ext, mime });
+    
+    if (ext !== '.docx' && mime !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      return res.status(400).json({ error: 'Файл должен быть в формате DOCX' });
+    }
+    
+    console.log('Starting mammoth extraction...');
+    
+    // Используем правильный синтаксис для mammoth с buffer
+    const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+    console.log('Mammoth result:', { 
+      hasValue: !!result.value, 
+      valueLength: result.value?.length,
+      messages: result.messages 
+    });
+    
+    const text = (result.value || '').trim();
+    
+    if (!text) {
+      return res.status(400).json({ error: 'Не удалось извлечь текст из DOCX файла' });
+    }
+    
+    console.log('DOCX parsing successful, text length:', text.length);
+    res.json({ text });
+  } catch (e) { 
+    console.error('DOCX parsing error:', e);
+    console.error('Error stack:', e.stack);
+    respondModelError(res, e); 
+  }
+});
+
+// Parse .pdf to text (for accordion uploads)
+app.post('/api/parse/pdf', uploadMemory.single('file'), async (req, res) => {
+  try {
+    console.log('=== PDF PARSING DEBUG ===');
+    console.log('File received:', req.file ? {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      bufferLength: req.file.buffer?.length
+    } : 'NO FILE');
+    
+    if (!req.file) return res.status(400).json({ error: 'no file' });
+    
+    // Проверяем, что файл действительно PDF
+    const ext = path.extname(req.file.originalname || '').toLowerCase();
+    const mime = req.file.mimetype || '';
+    
+    console.log('File validation:', { ext, mime });
+    
+    if (ext !== '.pdf' && mime !== 'application/pdf') {
+      return res.status(400).json({ error: 'Файл должен быть в формате PDF' });
+    }
+    
+    console.log('Starting PDF parsing...');
+    
+    // Используем pdf-parse для извлечения текста
+    const result = await pdfParse(req.file.buffer);
+    console.log('PDF parse result:', { 
+      hasText: !!result.text, 
+      textLength: result.text?.length,
+      pages: result.numpages,
+      info: result.info
+    });
+    
+    const text = (result.text || '').trim();
+    
+    if (!text) {
+      return res.status(400).json({ error: 'Не удалось извлечь текст из PDF файла' });
+    }
+    
+    console.log('PDF parsing successful, text length:', text.length);
+    res.json({ text });
+  } catch (e) { 
+    console.error('PDF parsing error:', e);
+    console.error('Error stack:', e.stack);
+    res.status(400).json({ error: e.message || 'Не удалось распарсить файл' });
   }
 });
 
@@ -1114,7 +1339,7 @@ app.post('/api/resume/ats', async (req, res) => {
     const out = { ...json, usage };
     setCached(cacheKey, out);
     res.json(out);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { respondModelError(res, e); }
 });
 
 // Short & cheap: Grade only
@@ -1133,7 +1358,7 @@ app.post('/api/resume/grade', async (req, res) => {
     const out = { ...json, usage };
     setCached(cacheKey, out);
     res.json(out);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { respondModelError(res, e); }
 });
 
 // Combo endpoint: summary + job + match (без ATS/grade/cover)
@@ -1153,9 +1378,32 @@ app.post('/api/combo/summary-match', async (req, res) => {
     const out = { ...json, usage };
     setCached(cacheKey, out);
     res.json(out);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { respondModelError(res, e); }
+});
+
+// Улучшенный endpoint для детального матчинга вакансии
+app.post('/api/vacancy/detailed-match', async (req, res) => {
+  try {
+    const { resumeText, jobText } = req.body;
+    if (!resumeText || !jobText) {
+      return res.status(400).json({ error: 'Нужны resumeText и jobText' });
+    }
+    
+    const resumeT = smartTrim(resumeText, 8000);
+    const jobT = smartTrim(jobText, 8000);
+    const cacheKey = `detailed-match:${resumeT}:${jobT}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+    
+    const { json, usage } = await chatJson([
+      { role: 'system', content: sysDetailedMatch() },
+      { role: 'user', content: userDetailedMatch(resumeT, jobT) }
+    ], { max_tokens: 1500, temperature: 0.2 });
+    
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
+  } catch (e) { respondModelError(res, e); }
 });
 
 // Экстрактивная ужимка резюме
@@ -1177,9 +1425,7 @@ app.post('/api/resume/condense', async (req, res) => {
     const out = { ...json, usage };
     setCached(cacheKey, out);
     res.json(out);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { respondModelError(res, e); }
 });
 
 // Объединённая оценка резюме (HR + Grade + ATS)
@@ -1371,6 +1617,47 @@ app.post('/api/evaluate', async (req, res) => {
       error: 'SERVER_ERROR',
       message: e?.message || 'Unknown error'
     });
+  }
+});
+
+// Генерация сопроводительного письма (должна быть ДО 404 handler)
+app.post('/api/cover/generate', async (req, res) => {
+  try {
+    const { resumeText, jobText } = req.body;
+    if (!resumeText || !jobText) {
+      return res.status(400).json({ error: 'Нужны resumeText и jobText' });
+    }
+    
+    const resumeT = smartTrim(resumeText, 8000);
+    const jobT = smartTrim(jobText, 8000);
+    const cacheKey = `cover:${resumeT}:${jobT}`;
+    const hit = getCached(cacheKey);
+    if (hit) return res.json(hit);
+    
+    const { json, usage } = await chatJson([
+      { role: 'system', content: 'Ты — опытный HR-специалист и карьерный консультант. Создавай персонализированные сопроводительные письма на русском языке. Письмо должно быть профессиональным, конкретным и показывать соответствие кандидата требованиям вакансии.' },
+      { role: 'user', content: `Создай сопроводительное письмо (110-160 слов) для кандидата на основе его резюме и требований вакансии. Письмо должно включать:
+1. Обращение к работодателю
+2. Краткое представление кандидата
+3. Соответствие требованиям вакансии
+4. Конкретные достижения и опыт
+5. Мотивацию работать в компании
+6. Вежливое завершение
+
+ФОРМАТ: {"cover_letter": "текст письма"}
+
+РЕЗЮМЕ:
+${resumeT}
+
+ВАКАНСИЯ:
+${jobT}` }
+    ], { max_tokens: 800, temperature: 0.3 });
+    
+    const out = { ...json, usage };
+    setCached(cacheKey, out);
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 

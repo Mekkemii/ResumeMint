@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>ResumeMint - AI ассистент для анализа резюме</title>
     <style>
         * {
@@ -53,7 +53,7 @@
 
         /* Основной контент */
         .main-content {
-            background-color: white;
+            background-color: transparent;
             min-height: calc(100vh - 80px);
             position: relative;
         }
@@ -529,8 +529,8 @@
 
         /* Секция анализа резюме */
         .analysis-section {
-            padding: 60px 0;
-            background-color: #f8fafc;
+            padding: 40px 0;
+            background-color: transparent;
             display: none;
         }
 
@@ -540,7 +540,7 @@
             text-align: center;
             font-size: 32px;
             margin-bottom: 40px;
-            color: #1f2937;
+            color: #e7e7ea;
         }
 
         .form-container {
@@ -555,22 +555,26 @@
             margin-bottom: 20px;
         }
 
-        label {
-            display: block;
+        .form-group label {
+            font-size: 14px;
+            color: #9aa0b4;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #374151;
         }
 
         textarea {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            min-height: 150px;
+            padding: 12px 14px;
+            border: 1px solid #2b2f45;
+            border-radius: 12px;
+            min-height: 420px;
             resize: vertical;
-            font-family: inherit;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
             font-size: 14px;
+            line-height: 1.35;
+            white-space: pre-wrap;
+            background: #0f111a;
+            color: #e7e7ea;
         }
 
         #jobText {
@@ -579,8 +583,8 @@
 
         textarea:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
         }
 
         /* Legacy file upload styles removed - replaced by panel-based file inputs */
@@ -662,7 +666,186 @@
             color: #374151;
         }
 
+        /* базовые улучшения */
+        html { font-size: clamp(14px, 1.8vw, 16px); }
+        .page { overflow-x: hidden; background:#0c0d12; color:#e7e7ea; }
+        .container { max-width:none; width:100%; padding:16px; }
+
+        /* Контейнер секции */
+        .section { width: 100%; }
+
+        /* Сетка для двух полей: резюме/вакансия */
+        .io-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;   /* десктоп: 2 колонки */
+          gap: 16px;
+          width: 100%;
+        }
+
+        /* Мобильная раскладка: 1 колонка */
+        @media (max-width: 1024px) {
+          .io-grid { grid-template-columns: 1fr; }
+        }
+
+        /* одинаковая типографика и авто-рост */
+        .text-area {
+          width: 100%;
+          box-sizing: border-box;
+          background: #0f111a;
+          color: #e7e7ea;
+          border: 1px solid #2b2f45;
+          border-radius: 12px;
+          padding: 12px 14px;
+          font: 14px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+          /* важно для авто-роста: */
+          overflow: hidden;      /* по умолчанию без внутреннего скролла */
+          resize: none;          /* автосайз управляет высотой */
+          min-height: 220px;     /* стартовая высота */
+        }
+
+        /* на маленьких экранах ручки можно вернуть, если нравится */
+        @media (max-width: 600px) {
+          .text-area { resize: vertical; }
+        }
+
+        /* чтобы ничего внутри формы не выходило за контейнер */
+        .form-card, .form-card * { max-inline-size: 100%; }
+
+        /* заголовки полей */
+        .field-title {
+            font-size: 14px;
+            color: #9aa0b4;
+            margin-bottom: 8px;
+            font-weight: 600;
+            display: block;
+        }
+
+        /* блок результатов (десктоп) */
+        .results-wide{ width:100%; margin-top:16px; background:#141622;
+          border:1px solid #23263a; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.25);
+          padding:16px; min-height:72vh;
+        }
+        .results-grid{ display:grid; grid-template-columns:340px minmax(0,1fr); gap:16px; height:100%; }
+        .results-sidebar{ background:#10121b; border:1px solid #23263a; border-radius:12px; padding:12px; overflow:auto; }
+        .results-main{ background:#0f111a; border:1px solid #23263a; border-radius:12px; padding:16px; overflow:auto; }
+
+        /* кнопки */
+        .btn-primary{ background:#ff8a00; color:#11131a; border:0; border-radius:12px; padding:12px 18px; font-weight:600; }
+        .actions{ display:flex; gap:12px; flex-wrap:wrap; }
+
+        /* ====== АДАПТИВ ====== */
+        @media (max-width: 1024px){
+          .grid-two{ display:grid; grid-template-columns:1fr; gap:12px; }
+          .text-area{ min-height:320px; }
+        }
+
+        /*— компакт для телефонов —*/
+        @media (max-width: 600px){
+          .container{ padding:12px; }
+          .text-area{ min-height:240px; font-size:14px; }
+          .btn-primary{ width:100%; padding:14px 18px; }  /* крупные клики */
+          .actions{ position:sticky; bottom:calc(env(safe-area-inset-bottom) + 8px);
+                    z-index:10; padding:8px 0; background:linear-gradient(180deg, transparent, rgba(12,13,18,.9)); }
+        }
+
+        /* безопасные отступы для вырезов (iPhone, Pixel) */
+        @supports (padding: max(0px)) {
+          .container { padding-left: max(12px, env(safe-area-inset-left));
+                       padding-right:max(12px, env(safe-area-inset-right)); }
+        }
+
+        /* === БАЗА ДЛЯ ВЫВОДА === */
+        .results-wide{ width:100%; max-width:none; }
+        .results-grid{ display:grid; grid-template-columns:340px minmax(0,1fr); gap:16px; }
+        .results-sidebar,
+        .results-main{
+          max-width:100%;
+          overflow-x:hidden;                       /* не вываливаться за экран */
+          overflow-y:auto;
+          min-height:0;
+        }
+        .results-main table{
+          display:block; width:100%; overflow-x:auto; /* если придёт таблица */
+        }
+
+
+        /* безопасные поля для экранов с вырезом */
+        @supports (padding: max(0px)){
+          .container{ padding-left:max(12px, env(safe-area-inset-left));
+                      padding-right:max(12px, env(safe-area-inset-right)); }
+        }
+
+        /* БАЗА: пусть дети грида могут сжиматься */
+        .results-grid > * { min-width: 0; }
+
+        /* ===== МОБИЛЬНЫЕ ОВЕРРАЙДЫ ===== */
+        @media (max-width: 600px) {
+          /* сам блок результата — никаких фикс. высот/скроллов */
+          .results-wide {
+            padding: 12px;
+            min-height: unset !important;
+            height: auto !important;
+            overflow: visible !important;
+            border-radius: 12px;
+          }
+
+          /* грид превращаем в обычный вертикальный поток */
+          .results-grid {
+            display: block !important;
+            height: auto !important;
+          }
+
+          /* и «Сводка», и «Детали» — обычные блоки без внутреннего скролла */
+          .results-sidebar,
+          .results-main {
+            max-height: none !important;
+            height: auto !important;
+            overflow: visible !important;
+            padding: 12px;
+          }
+
+          /* небольшой зазор между ними */
+          .results-sidebar + .results-main { margin-top: 10px; }
+        }
+
+        /* на планшете тоже складываемся в столбец, если нужно */
+        @media (max-width: 1024px) {
+          .results-grid { grid-template-columns: 1fr !important; }
+        }
+
+        /* длинные строки не ломают вёрстку */
+        .results-main,
+        .results-sidebar {
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+        .results-main pre,
+        .results-main code { white-space: pre-wrap; }
+
+        /* файлы на мобиле */
+        @media (max-width:600px){
+          label[for="resumeFile"], label[for="vacancyFile"]{ width:100%; text-align:center; }
+        }
+
+        /* длинные списки */
+        .results-main ul{ padding-left:18px; margin:0; }
+        .results-main li{ margin:2px 0; }
+
         /* Адаптивность */
+        @media (max-width: 1024px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            textarea {
+                min-height: 320px;
+            }
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
             .hero-title {
                 font-size: 36px;
@@ -761,6 +944,14 @@
         /* Layout */
         .main-content { background: transparent; }
         .analysis-title { color: var(--text); }
+        
+        /* Full-width container */
+        .rm-container {
+            max-width: none;
+            width: min(1680px, 100%);
+            margin-inline: auto;
+            padding: 16px 24px;
+        }
 
         /* Buttons */
         .btn { border: 1px solid transparent; }
@@ -810,7 +1001,7 @@
             border-color: var(--border);
             color: var(--text);
         }
-        textarea::placeholder { color: var(--text-3); }
+        textarea::placeholder { color: #6b7280; }
         textarea:focus { box-shadow: 0 0 0 3px var(--ring); border-color: var(--primary-strong); }
         .file-upload:hover { border-color: var(--primary); }
 
@@ -856,15 +1047,15 @@
             border-radius: 12px; 
             font-size: 14px; 
             font-weight: 500;
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            background: rgba(255, 255, 255, 0.05); 
-            color: rgba(255, 255, 255, 0.9); 
+            border: 1px solid #2b2f45; 
+            background: #0f111a; 
+            color: #e7e7ea; 
             cursor: pointer;
             transition: all 0.2s;
         }
         .panel-btn:hover { 
-            background: rgba(255, 255, 255, 0.1); 
-            border-color: rgba(255, 255, 255, 0.2); 
+            background: #1a1d2e; 
+            border-color: #3b3f5c; 
             transform: translateY(-1px);
         }
         .panel-btn.active {
@@ -875,11 +1066,12 @@
 
         /* Form panels */
         .form-panel {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            background: #141622;
+            border: 1px solid #23263a;
+            border-radius: 14px;
             padding: 20px;
             margin-bottom: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
         }
         .panel-header {
             margin-bottom: 20px;
@@ -887,12 +1079,12 @@
         .panel-header h3 {
             font-size: 18px;
             font-weight: 600;
-            color: white;
+            color: #e7e7ea;
             margin-bottom: 8px;
         }
         .panel-hint {
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
+            color: #9aa0b4;
             margin: 0;
         }
         .panel-content {
@@ -902,12 +1094,53 @@
         }
         .form-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(420px, 1fr) minmax(420px, 1fr);
             gap: 20px;
         }
         .panel-actions {
             display: flex;
             justify-content: center;
+            position: sticky;
+            top: 8px;
+            z-index: 10;
+            background: rgba(20, 22, 34, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 8px 0;
+            margin: -8px 0 8px 0;
+        }
+        
+        /* Специальные стили для панели Premium */
+        #panel-premium .panel-actions {
+            position: sticky;
+            top: 8px;
+            z-index: 10;
+            background: rgba(20, 22, 34, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 8px 0;
+            margin: -8px 0 8px 0;
+        }
+        
+        /* Стили для улучшения внешнего вида кнопки "Запустить всё сразу" */
+        .run-btn.premium {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .run-btn.premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .run-btn.premium:hover::before {
+            left: 100%;
         }
         .run-btn {
             padding: 12px 24px;
@@ -915,14 +1148,14 @@
             font-size: 16px;
             font-weight: 600;
             border: none;
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.8), rgba(236, 72, 153, 0.8));
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
             color: white;
             cursor: pointer;
             transition: all 0.2s;
             box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
         }
         .run-btn:hover:not(:disabled) {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 1), rgba(236, 72, 153, 1));
+            background: linear-gradient(135deg, #7c3aed, #9333ea);
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
         }
@@ -932,17 +1165,41 @@
             transform: none;
         }
         .run-btn.premium {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.8), rgba(239, 68, 68, 0.8));
+            background: linear-gradient(135deg, #f59e0b, #d97706);
             box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            position: relative;
+            overflow: hidden;
         }
         .run-btn.premium:hover:not(:disabled) {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 1), rgba(239, 68, 68, 1));
+            background: linear-gradient(135deg, #d97706, #b45309);
             box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+        }
+        
+        .run-btn.premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .run-btn.premium:hover::before {
+            left: 100%;
         }
         .file-input {
             margin-top: 8px;
             font-size: 12px;
             color: rgba(255, 255, 255, 0.7);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .file-input:hover {
+            color: rgba(255, 255, 255, 0.9);
         }
 
         /* Стили для результатов оценки резюме */
@@ -1016,14 +1273,60 @@
             display: none !important;
         }
 
-        .checks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 12px; }
+        .checks-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); 
+            gap: 16px; 
+            margin-top: 16px; 
+        }
         .check-card { 
             background: linear-gradient(0deg, rgba(43,43,58,0.25), rgba(43,43,58,0.25)), var(--surface); 
             border: 1px solid var(--border); 
-            border-radius: 12px; 
-            padding: 12px; 
+            border-radius: 14px; 
+            padding: 16px; 
             color: var(--text-2);
             min-height: 0;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        }
+        
+        /* Блок результатов — широкая карта на всю страницу */
+        .results-wide {
+            width: 100%;
+            margin-top: 16px;
+            background: #141622;
+            border: 1px solid #23263a;
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.25);
+            padding: 16px;
+            /* Высота как на скрине: занимает большую часть экрана */
+            min-height: 72vh;
+        }
+
+        /* Внутри — 2 колонки: слева узкая сводка, справа подробности */
+        .results-grid {
+            display: grid;
+            grid-template-columns: 340px minmax(0, 1fr);
+            gap: 16px;
+            height: 100%;
+        }
+
+        /* Левая колонка (сводка) прокручивается при переполнении */
+        .results-sidebar {
+            background: #10121b;
+            border: 1px solid #23263a;
+            border-radius: 12px;
+            padding: 12px;
+            overflow: auto;
+        }
+
+        /* Правая колонка — большая область для текста/таблиц/блоков */
+        .results-main {
+            background: #0f111a;
+            border: 1px solid #23263a;
+            border-radius: 12px;
+            padding: 16px;
+            overflow: auto;
+            min-height: 100%;
         }
         /* Скрываем пустые карточки результатов */
         .check-card:empty {
@@ -1090,7 +1393,7 @@
     </nav>
 
     <!-- Основной контент -->
-    <main class="main-content">
+    <main class="main-content page">
         <!-- Героическая секция -->
         <section class="hero-section">
             <div class="rm-container text-center">
@@ -1117,7 +1420,7 @@
 
         <!-- Секция анализа резюме -->
         <section id="analysisSection" class="analysis-section">
-            <div class="rm-container rm-nudge">
+            <div class="rm-container container rm-nudge">
                 <h2 class="analysis-title" style="text-align: center;">Анализ резюме</h2>
                 
                 <div class="form-container">
@@ -1130,45 +1433,45 @@
                     </div>
 
                     <!-- Панель Оценка резюме -->
-                    <div id="panel-review" class="form-panel" style="display: block;">
+                    <div id="panel-review" class="form-panel section form-card" style="display: block;">
                         <div class="panel-header">
                             <h3>Оценка резюме (HR + Грейд + ATS)</h3>
                             <p class="panel-hint">Структура, качество текста, сильные/слабые стороны, грейд с обоснованием и ATS-совместимость</p>
                         </div>
                         <div class="panel-content">
                             <div class="form-group">
-                                <label>Текст резюме:</label>
-                                <textarea id="review-resume" placeholder="Вставьте текст резюме..."></textarea>
+                                <label class="field-title">Текст резюме:</label>
+                                <textarea id="review-resume" class="text-area" placeholder="Вставьте текст резюме..."></textarea>
                                 <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleReviewFile(event)" class="file-input">
                             </div>
 
-                            <div class="panel-actions">
-                                <button class="run-btn" onclick="runReviewFromPanel()" disabled>Запустить оценку резюме</button>
+                            <div class="panel-actions actions">
+                                <button class="run-btn btn-primary" onclick="runReviewFromPanel()" disabled>Запустить оценку резюме</button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Панель Матчинг вакансии -->
-                    <div id="panel-compare" class="form-panel" style="display: none;">
+                    <div id="panel-compare" class="form-panel section form-card" style="display: none;">
                         <div class="panel-header">
                             <h3>Матчинг вакансии: анализ JD + требуемый грейд + сопоставление</h3>
                             <p class="panel-hint">Вставьте резюме и вакансию для комплексного анализа</p>
                         </div>
                         <div class="panel-content">
-                            <div class="form-row">
+                            <div class="io-grid">
                                 <div class="form-group">
-                                    <label>Текст резюме:</label>
-                                    <textarea id="compare-resume" placeholder="Вставьте текст резюме..."></textarea>
+                                    <label class="field-title">Текст резюме:</label>
+                                    <textarea id="compare-resume" class="text-area" placeholder="Вставьте текст резюме..."></textarea>
                                     <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleCompareFile(event, 'resume')" class="file-input">
                                 </div>
                                 <div class="form-group">
-                                    <label>Текст вакансии:</label>
-                                    <textarea id="compare-job" placeholder="Вставьте текст вакансии..."></textarea>
+                                    <label class="field-title">Текст вакансии:</label>
+                                    <textarea id="compare-job" class="text-area" placeholder="Вставьте текст вакансии..."></textarea>
                                     <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleCompareFile(event, 'job')" class="file-input">
                                 </div>
                             </div>
-                            <div class="panel-actions">
-                                <button class="run-btn" onclick="runCompareFromPanel()" disabled>Запустить матчинг вакансии</button>
+                            <div class="panel-actions actions">
+                                <button class="run-btn btn-primary" onclick="runCompareFromPanel()" disabled>Запустить матчинг вакансии</button>
                             </div>
                         </div>
                     </div>
@@ -1176,51 +1479,51 @@
 
 
                     <!-- Панель Сопроводительное -->
-                    <div id="panel-cover" class="form-panel" style="display: none;">
+                    <div id="panel-cover" class="form-panel section form-card" style="display: none;">
                         <div class="panel-header">
                             <h3>Сопроводительное письмо</h3>
                             <p class="panel-hint">Нужны выжимка резюме и описание вакансии</p>
                         </div>
                         <div class="panel-content">
-                            <div class="form-row">
+                            <div class="io-grid">
                                 <div class="form-group">
-                                    <label>Выжимка резюме:</label>
-                                    <textarea id="cover-resume" placeholder="Вставьте выжимку резюме..."></textarea>
+                                    <label class="field-title">Выжимка резюме:</label>
+                                    <textarea id="cover-resume" class="text-area" placeholder="Вставьте выжимку резюме..."></textarea>
                                     <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleCoverFile(event, 'resume')" class="file-input">
                                 </div>
                                 <div class="form-group">
-                                    <label>Описание вакансии:</label>
-                                    <textarea id="cover-job" placeholder="Вставьте описание вакансии..."></textarea>
+                                    <label class="field-title">Описание вакансии:</label>
+                                    <textarea id="cover-job" class="text-area" placeholder="Вставьте описание вакансии..."></textarea>
                                     <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handleCoverFile(event, 'job')" class="file-input">
                                 </div>
                             </div>
-                            <div class="panel-actions">
-                                <button class="run-btn" onclick="runCoverFromPanel()" disabled>Сгенерировать письмо</button>
+                            <div class="panel-actions actions">
+                                <button class="run-btn btn-primary" onclick="runCoverFromPanel()" disabled>Сгенерировать письмо</button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Панель Premium -->
-                    <div id="panel-premium" class="form-panel" style="display: none;">
+                    <div id="panel-premium" class="form-panel section form-card" style="display: none;">
                         <div class="panel-header">
                             <h3>Всё сразу</h3>
                             <p class="panel-hint">Полный пакет: выжимка, JD, сопоставление, письмо</p>
                         </div>
                         <div class="panel-content">
-                            <div class="form-row">
+                            <div class="io-grid">
                                 <div class="form-group">
-                                    <label>Текст резюме:</label>
-                                    <textarea id="premium-resume" placeholder="Вставьте текст резюме..."></textarea>
+                                    <label class="field-title">Текст резюме:</label>
+                                    <textarea id="premium-resume" class="text-area" placeholder="Вставьте текст резюме..."></textarea>
                                     <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handlePremiumFile(event, 'resume')" class="file-input">
                                 </div>
                                 <div class="form-group">
-                                    <label>Текст вакансии:</label>
-                                    <textarea id="premium-job" placeholder="Вставьте текст вакансии..."></textarea>
+                                    <label class="field-title">Текст вакансии:</label>
+                                    <textarea id="premium-job" class="text-area" placeholder="Вставьте текст вакансии..."></textarea>
                                     <input type="file" accept=".txt,.md,.doc,.docx,.pdf" onchange="handlePremiumFile(event, 'job')" class="file-input">
                                 </div>
                             </div>
-                            <div class="panel-actions">
-                                <button class="run-btn premium" onclick="runPremiumFromPanel()" disabled>Запустить всё сразу</button>
+                            <div class="panel-actions actions">
+                                <button class="run-btn premium btn-primary" onclick="runPremiumFromPanel()" disabled>Запустить всё сразу</button>
                             </div>
                         </div>
                     </div>
@@ -1233,6 +1536,19 @@
                         <div id="res-match" class="check-card"></div>
                         <div id="res-cover" class="check-card" style="grid-column: 1/-1;"></div>
                     </div>
+                    
+                    <!-- Полноэкранный блок результатов -->
+                    <section id="results" class="results-wide" style="display:none;">
+                        <div class="results-grid">
+                            <aside class="results-sidebar" id="results-summary">
+                                <!-- сюда рендеришь «Общее соответствие, шансы, сильные/слабые стороны» -->
+                            </aside>
+
+                            <div class="results-main" id="results-details">
+                                <!-- сюда рендеришь развернутые блоки: сравнение по пунктам, текст письма, и т.п. -->
+                            </div>
+                        </div>
+                    </section>
 
                     <div id="loading" class="loading">
                         <div class="spinner"></div>
@@ -1268,7 +1584,7 @@
             <h3>🛠 Технологии:</h3>
             <p>Использует OpenAI GPT API для анализа и генерации рекомендаций, поддерживает загрузку файлов .docx, .pdf, .txt</p>
 
-            <a href="https://github.com/your-repo/resume-mint" target="_blank" class="github-link">
+            <a href="https://github.com/Mekkemii/ResumeMint1" target="_blank" class="github-link">
                 📖 Читать полную документацию на GitHub
             </a>
         </div>
@@ -1451,8 +1767,12 @@
             setBlock('res-summary', '');
             setBlock('res-match', '');
             setBlock('res-cover', '');
+            setBlock('results-summary', '');
+            setBlock('results-details', '');
             const err = document.getElementById('error');
             if (err) { err.textContent = ''; err.style.display = 'none'; }
+            const resultsSection = document.getElementById('results');
+            if (resultsSection) { resultsSection.style.display = 'none'; }
         }
         
         // Обработчики файлов для каждой панели
@@ -1463,6 +1783,8 @@
                     const text = await fileToText(file);
                     document.getElementById('review-resume').value = text;
                     updateRunButtons();
+                    // Пересчитываем высоту после загрузки файла
+                    if (window.fitTextareasNow) window.fitTextareasNow();
                 } catch (e) {
                     alert('Ошибка чтения файла: ' + e.message);
                 }
@@ -1476,6 +1798,8 @@
                     const text = await fileToText(file);
                     document.getElementById(`compare-${field}`).value = text;
                     updateRunButtons();
+                    // Пересчитываем высоту после загрузки файла
+                    if (window.fitTextareasNow) window.fitTextareasNow();
                 } catch (e) {
                     alert('Ошибка чтения файла: ' + e.message);
                 }
@@ -1491,6 +1815,8 @@
                     const text = await fileToText(file);
                     document.getElementById(`cover-${field}`).value = text;
                     updateRunButtons();
+                    // Пересчитываем высоту после загрузки файла
+                    if (window.fitTextareasNow) window.fitTextareasNow();
                 } catch (e) {
                     alert('Ошибка чтения файла: ' + e.message);
                 }
@@ -1504,6 +1830,8 @@
                     const text = await fileToText(file);
                     document.getElementById(`premium-${field}`).value = text;
                     updateRunButtons();
+                    // Пересчитываем высоту после загрузки файла
+                    if (window.fitTextareasNow) window.fitTextareasNow();
                 } catch (e) {
                     alert('Ошибка чтения файла: ' + e.message);
                 }
@@ -1520,11 +1848,18 @@
                     reader.readAsText(file, "utf-8");
                 });
             }
-            // Для docx/pdf — пробрасываем на бэкенд
+            
+            // Для docx/pdf — используем новый единый endpoint
             const formData = new FormData();
             formData.append("file", file);
-            const response = await fetch("/api/parse/docx", { method: "POST", body: formData });
-            if (!response.ok) throw new Error("Не удалось распарсить файл");
+            
+            console.log('Using /api/parse endpoint for file:', file.name, 'type:', file.type);
+            
+            const response = await fetch("/api/parse", { method: "POST", body: formData });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || "Не удалось распарсить файл");
+            }
             const data = await response.json();
             return data.text || "";
         }
@@ -1543,6 +1878,9 @@
             // Устанавливаем активную кнопку review по умолчанию
             const reviewBtn = document.querySelector('[onclick="openPanel(\'review\')"]');
             if (reviewBtn) reviewBtn.classList.add('active');
+            
+            // Умная автоподгонка высоты текстовых полей
+            initializeSmartTextareas();
         });
 
         function showAnalysis() {
@@ -1610,6 +1948,32 @@
 
         // Legacy file handling functions removed - replaced by panel-based file inputs
 
+        // ===== File Upload Handler for Vercel Serverless =====
+        (function () {
+          const fileInput = document.getElementById('file') || document.querySelector('input[type=file]');
+          const runBtn = document.getElementById('run') || Array.from(document.querySelectorAll('button'))
+            .find(b => (b.textContent||'').toLowerCase().includes('запустить оценку'));
+          const textArea = document.getElementById('resume-text') || document.querySelector('textarea');
+
+          if (!fileInput || !runBtn) return;
+
+          runBtn.addEventListener('click', async () => {
+            const file = fileInput.files?.[0];
+            if (!file) return alert('Выберите файл (.pdf/.docx/.txt)');
+
+            const fd = new FormData(); fd.append('file', file);
+            try {
+              const r = await fetch('/api/parse', { method: 'POST', body: fd });
+              const data = await r.json();
+              if (!r.ok) throw new Error(data?.error || 'Parse error');
+              if (textArea) textArea.value = data.text || '';
+              alert('Файл распознан — текст подставлен ниже.');
+            } catch (e) {
+              alert('Ошибка чтения файла: ' + e.message);
+            }
+          });
+        })();
+
         // ===== Checks Bar logic (calls backend endpoints) =====
         function setBlock(id, html) {
             const el = document.getElementById(id);
@@ -1642,8 +2006,16 @@
                 const btn = document.querySelector('[onclick="runReviewFromPanel()"]');
                 const prev = btn ? btn.textContent : '';
                 if (btn) { btn.disabled = true; btn.textContent = 'Считаем…'; }
-                // Универсальный анализатор (резюме; jobText опционален)
-                const data = await postJSON('/api/analyze', { resumeText: resume });
+                // Универсальный анализатор через /api/all (используем только блок evaluate)
+                const allData = await postJSON('/api/all', { resumeText: resume });
+                const eva = allData?.evaluate?.analysis || allData?.evaluate || {};
+                const data = {
+                  grade: typeof eva?.grade === 'string' ? { level: eva.grade } : (eva?.grade || {}),
+                  summary: eva?.summary,
+                  strengths: eva?.strengths || [],
+                  gaps: eva?.gaps || [],
+                  ats_warnings: eva?.ats_issues || eva?.ats_warnings || []
+                };
                 
                 // Формируем HTML для вывода результата
                 let html = `<div class="review-result">`;
@@ -1735,6 +2107,13 @@
                 setBlock('res-review', html);
                 if (btn) { btn.disabled = false; btn.textContent = prev; }
                 
+                // Прокручиваем к результатам
+                const resultsSection = document.getElementById('results');
+                if (resultsSection) {
+                    resultsSection.style.display = 'block';
+                    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                
                 // Загружаем сохраненные ответы после создания окна
                 if (data.questions?.length > 0) {
                     setTimeout(() => {
@@ -1753,39 +2132,159 @@
                 if (!resume || !job) return setBlock('res-summary','Для матчинга нужны резюме и вакансия');
                 const btn = document.querySelector('[onclick="runCompareFromPanel()"]');
                 const prev = btn ? btn.textContent : '';
-                if (btn) { btn.disabled = true; btn.textContent = 'Считаем матчинг…'; }
-                const data = await postJSON('/api/analyze', { resumeText: resume, jobText: job });
+                if (btn) { btn.disabled = true; btn.textContent = 'Анализируем соответствие…'; }
+                
+                // Используем новый детальный endpoint
+                const data = await postJSON('/api/vacancy/detailed-match', { resumeText: resume, jobText: job });
                 
                 // Формируем HTML для результатов
                 let html = '';
                 
-                // Информация о вакансии (универсальная схема)
-                if (data.job_analysis) {
-                  html += `<div class="job-info">`;
-                  html += `<b>Требуемый грейд:</b> ${data.job_analysis.required_grade}`;
-                  if (Array.isArray(data.job_analysis.rationale) && data.job_analysis.rationale.length) {
-                    html += `<div class='opacity-80 text-sm' style='margin-top:6px;'>${safeText(data.job_analysis.rationale.join(' · '))}</div>`;
+                // Анализ вакансии
+                if (data.job) {
+                  html += `<div class="job-info" style="margin-bottom: 20px;">`;
+                  html += `<h4 style="color: #8b5cf6; margin-bottom: 8px;">📋 Анализ вакансии</h4>`;
+                  html += `<div style="margin-bottom: 12px;"><b>Описание:</b> ${data.job.job_summary || 'Не указано'}</div>`;
+                  
+                  if (data.job.job_grade) {
+                    html += `<div style="margin-bottom: 12px;"><b>Требуемый уровень:</b> ${data.job.job_grade.level} — ${data.job.job_grade.rationale}</div>`;
+                  }
+                  
+                  if (Array.isArray(data.job.requirements) && data.job.requirements.length) {
+                    html += `<div style="margin-bottom: 8px;"><b>Основные требования:</b></div>`;
+                    html += `<ul style="margin: 0; padding-left: 20px; opacity: 0.8;">`;
+                    data.job.requirements.forEach(req => {
+                      html += `<li>${req}</li>`;
+                    });
+                    html += `</ul>`;
+                  }
+                  
+                  if (Array.isArray(data.job.nice_to_have) && data.job.nice_to_have.length) {
+                    html += `<div style="margin-top: 8px; margin-bottom: 8px;"><b>Желательные навыки:</b></div>`;
+                    html += `<ul style="margin: 0; padding-left: 20px; opacity: 0.8;">`;
+                    data.job.nice_to_have.forEach(skill => {
+                      html += `<li>${skill}</li>`;
+                    });
+                    html += `</ul>`;
                   }
                   html += `</div>`;
                 }
                 
-                // Результаты сопоставления
-                if (data.match) {
-                  html += `<div class="match-info" style="margin-top: 16px;">`;
-                  html += `<b>Сопоставление:</b> покрытие ${data.match.coverage_ratio ?? '-'}% · итог: ${data.match.overall || '-'}`;
-                  if (Array.isArray(data.match.matrix) && data.match.matrix.length) {
-                    html += `<div class='opacity-80' style='margin-top:8px;'>`;
-                    html += `<b>Матрица требований (фрагмент):</b>`;
-                    const rows = data.match.matrix.slice(0, 5).map(r => `• ${r.requirement} — evidence: ${r.evidence}${r.comment ? ` (комментарий: ${r.comment})` : ''}`);
-                    html += `<div style='margin-top:4px; white-space:pre-wrap;'>${rows.join('\n')}</div>`;
-                    html += `</div>`;
+                // Анализ кандидата
+                if (data.candidate) {
+                  html += `<div class="candidate-info" style="margin-bottom: 20px;">`;
+                  html += `<h4 style="color: #10b981; margin-bottom: 8px;">👤 Анализ кандидата</h4>`;
+                  html += `<div style="margin-bottom: 12px;"><b>Описание:</b> ${data.candidate.candidate_summary || 'Не указано'}</div>`;
+                  
+                  if (data.candidate.candidate_grade) {
+                    html += `<div style="margin-bottom: 12px;"><b>Уровень кандидата:</b> ${data.candidate.candidate_grade.level} — ${data.candidate.candidate_grade.rationale}</div>`;
                   }
+                  
+                  if (Array.isArray(data.candidate.key_skills) && data.candidate.key_skills.length) {
+                    html += `<div style="margin-bottom: 8px;"><b>Ключевые навыки:</b></div>`;
+                    html += `<div style="opacity: 0.8;">${data.candidate.key_skills.join(', ')}</div>`;
+                  }
+                  
+                  if (data.candidate.experience_summary) {
+                    html += `<div style="margin-top: 8px;"><b>Опыт работы:</b></div>`;
+                    html += `<div style="opacity: 0.8;">${data.candidate.experience_summary}</div>`;
+                  }
+                  html += `</div>`;
+                }
+                
+                // Детальное сопоставление
+                if (data.match) {
+                  html += `<div class="match-info" style="margin-bottom: 20px;">`;
+                  html += `<h4 style="color: #f59e0b; margin-bottom: 8px;">🎯 Детальное сопоставление</h4>`;
+                  
+                  // Общий результат
+                  const matchColor = data.match.overall_match >= 70 ? '#10b981' : data.match.overall_match >= 40 ? '#f59e0b' : '#ef4444';
+                  html += `<div style="margin-bottom: 12px; font-size: 18px; font-weight: bold; color: ${matchColor};">`;
+                  html += `Общее соответствие: ${data.match.overall_match}%`;
+                  html += `</div>`;
+                  
+                  html += `<div style="margin-bottom: 12px;"><b>Соответствие уровню:</b> ${data.match.grade_fit}</div>`;
+                  html += `<div style="margin-bottom: 12px;"><b>Шансы на успех:</b> ${data.match.chances}</div>`;
+                  
+                  // Сильные стороны
+                  if (Array.isArray(data.match.strengths) && data.match.strengths.length) {
+                    html += `<div style="margin-bottom: 8px;"><b style="color: #10b981;">✅ Сильные стороны:</b></div>`;
+                    html += `<ul style="margin: 0; padding-left: 20px; opacity: 0.8;">`;
+                    data.match.strengths.forEach(strength => {
+                      html += `<li>${strength}</li>`;
+                    });
+                    html += `</ul>`;
+                  }
+                  
+                  // Слабые стороны
+                  if (Array.isArray(data.match.weaknesses) && data.match.weaknesses.length) {
+                    html += `<div style="margin-top: 12px; margin-bottom: 8px;"><b style="color: #ef4444;">❌ Слабые стороны:</b></div>`;
+                    html += `<ul style="margin: 0; padding-left: 20px; opacity: 0.8;">`;
+                    data.match.weaknesses.forEach(weakness => {
+                      html += `<li>${weakness}</li>`;
+                    });
+                    html += `</ul>`;
+                  }
+                  
+                  // Недостающие требования
+                  if (Array.isArray(data.match.missing_requirements) && data.match.missing_requirements.length) {
+                    html += `<div style="margin-top: 12px; margin-bottom: 8px;"><b style="color: #f59e0b;">⚠️ Чего не хватает:</b></div>`;
+                    html += `<ul style="margin: 0; padding-left: 20px; opacity: 0.8;">`;
+                    data.match.missing_requirements.forEach(req => {
+                      html += `<li>${req}</li>`;
+                    });
+                    html += `</ul>`;
+                  }
+                  
+                  // Рекомендации
+                  if (Array.isArray(data.match.recommendations) && data.match.recommendations.length) {
+                    html += `<div style="margin-top: 12px; margin-bottom: 8px;"><b style="color: #8b5cf6;">💡 Рекомендации для улучшения:</b></div>`;
+                    html += `<ul style="margin: 0; padding-left: 20px; opacity: 0.8;">`;
+                    data.match.recommendations.forEach(rec => {
+                      html += `<li>${rec}</li>`;
+                    });
+                    html += `</ul>`;
+                  }
+                  html += `</div>`;
+                }
+                
+                // Построчный анализ требований
+                if (Array.isArray(data.detailed_analysis) && data.detailed_analysis.length) {
+                  html += `<div class="detailed-analysis">`;
+                  html += `<h4 style="color: #6366f1; margin-bottom: 8px;">📊 Построчный анализ требований</h4>`;
+                  
+                  data.detailed_analysis.forEach((item, index) => {
+                    const statusColor = item.status === 'полное соответствие' ? '#10b981' : 
+                                       item.status === 'частичное соответствие' ? '#f59e0b' : '#ef4444';
+                    const statusIcon = item.status === 'полное соответствие' ? '✅' : 
+                                     item.status === 'частичное соответствие' ? '⚠️' : '❌';
+                    
+                    html += `<div style="margin-bottom: 16px; padding: 12px; border: 1px solid #374151; border-radius: 8px; background: rgba(255,255,255,0.02);">`;
+                    html += `<div style="margin-bottom: 8px;"><b>${index + 1}. ${item.requirement}</b></div>`;
+                    html += `<div style="margin-bottom: 6px; opacity: 0.8;"><b>Доказательства:</b> ${item.evidence || 'Не найдено'}</div>`;
+                    html += `<div style="margin-bottom: 6px; color: ${statusColor};">${statusIcon} <b>Статус:</b> ${item.status} (${item.score}%)</div>`;
+                    if (item.comment) {
+                      html += `<div style="opacity: 0.8; font-style: italic;">💬 ${item.comment}</div>`;
+                    }
+                    html += `</div>`;
+                  });
+                  
                   html += `</div>`;
                 }
                 
                 setBlock('res-summary', html);
                 if (btn) { btn.disabled = false; btn.textContent = prev; }
-            } catch (e) { setBlock('res-summary','Ошибка матчинга: ' + e.message); }
+                
+                // Прокручиваем к результатам
+                const resultsSection = document.getElementById('results');
+                if (resultsSection) {
+                    resultsSection.style.display = 'block';
+                    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } catch (e) { 
+                setBlock('res-summary','Ошибка матчинга: ' + e.message); 
+                if (btn) { btn.disabled = false; btn.textContent = prev; }
+            }
         }
         
 
@@ -1800,13 +2299,21 @@
                 const btn = document.querySelector('[onclick="runCoverFromPanel()"]');
                 const prev = btn ? btn.textContent : '';
                 if (btn) { btn.disabled = true; btn.textContent = 'Генерируем письмо…'; }
-                const data = await postJSON('/api/analyze', { resumeText: resume, jobText: job });
-                if (data.cover_letter) {
-                  setBlock('res-cover',`<b>Сопроводительное:</b><div style='margin-top:6px; white-space:pre-wrap;'>${data.cover_letter}</div>`);
+                const data = await postJSON('/api/cover-letter', { resumeText: resume, vacancyText: job });
+                const letter = data.coverLetter || data.letter || data.cover_letter;
+                if (letter) {
+                  setBlock('res-cover',`<b>Сопроводительное:</b><div style='margin-top:6px; white-space:pre-wrap;'>${letter}</div>`);
                 } else {
                   setBlock('res-cover','Сопроводительное не сгенерировано');
                 }
                 if (btn) { btn.disabled = false; btn.textContent = prev; }
+                
+                // Прокручиваем к результатам
+                const resultsSection = document.getElementById('results');
+                if (resultsSection) {
+                    resultsSection.style.display = 'block';
+                    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             } catch (e) { setBlock('res-cover','Ошибка письма: ' + e.message); }
         }
         
@@ -1816,9 +2323,176 @@
                 const job = document.getElementById('premium-job')?.value?.trim();
                 if (!resume || !job) return setBlock('res-match','Нужны резюме и вакансия');
                 
-                const data = await postJSON('/api/premium/oneshot', { resumeText: resume, jobText: job });
-                setBlock('res-match',`<b>Premium:</b> match ${data.match?.match_percent ?? '-'}%, grade ${data.resume?.grade ?? '-'}`);
-            } catch (e) { setBlock('res-match','Ошибка premium: ' + e.message); }
+                const btn = document.querySelector('[onclick="runPremiumFromPanel()"]');
+                const prev = btn ? btn.textContent : '';
+                if (btn) { btn.disabled = true; btn.textContent = 'Анализируем...'; }
+                
+                // Показываем полноэкранный блок результатов
+                const resultsSection = document.getElementById('results');
+                if (resultsSection) {
+                    resultsSection.style.display = 'block';
+                    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                
+                // Запускаем все анализы параллельно
+                const [detailedMatch, resumeAnalysis, coverLetter] = await Promise.all([
+                    postJSON('/api/vacancy/detailed-match', { resumeText: resume, jobText: job }),
+                    postJSON('/api/resume-score', { resumeText: resume }),
+                    postJSON('/api/cover-letter', { resumeText: resume, vacancyText: job })
+                ]);
+                
+                // Формируем сводку для левой колонки
+                let summaryHtml = '<div style="font-size: 14px;">';
+                summaryHtml += `<h3 style="color: #8b5cf6; margin-bottom: 16px; font-size: 18px;">📊 Сводка анализа</h3>`;
+                
+                // Общий результат матчинга
+                if (detailedMatch?.match) {
+                    const matchColor = detailedMatch.match.overall_match >= 70 ? '#10b981' : 
+                                      detailedMatch.match.overall_match >= 40 ? '#f59e0b' : '#ef4444';
+                    summaryHtml += `<div style="margin-bottom: 16px; padding: 12px; background: rgba(139, 92, 246, 0.1); border-radius: 8px; border-left: 4px solid ${matchColor};">`;
+                    summaryHtml += `<div style="font-size: 20px; font-weight: bold; color: ${matchColor}; margin-bottom: 8px;">`;
+                    summaryHtml += `🎯 ${detailedMatch.match.overall_match}% соответствие`;
+                    summaryHtml += `</div>`;
+                    summaryHtml += `<div style="margin-bottom: 4px;"><b>Уровень:</b> ${detailedMatch.match.grade_fit}</div>`;
+                    summaryHtml += `<div><b>Шансы:</b> ${detailedMatch.match.chances}</div>`;
+                    summaryHtml += `</div>`;
+                }
+                
+                // Анализ резюме
+                if (resumeAnalysis?.analysis) {
+                    summaryHtml += `<div style="margin-bottom: 16px;">`;
+                    summaryHtml += `<h4 style="color: #8b5cf6; margin-bottom: 8px; font-size: 16px;">📋 Резюме</h4>`;
+                    summaryHtml += `<div style="font-size: 13px; opacity: 0.9; margin-bottom: 8px;">${resumeAnalysis.analysis.summary || 'Не указано'}</div>`;
+                    
+                    if (Array.isArray(resumeAnalysis.analysis.strengths) && resumeAnalysis.analysis.strengths.length) {
+                        summaryHtml += `<div style="margin-bottom: 6px;"><b style="color: #10b981; font-size: 13px;">✅ Сильные:</b></div>`;
+                        summaryHtml += `<ul style="margin: 0; padding-left: 16px; font-size: 12px; opacity: 0.8;">`;
+                        resumeAnalysis.analysis.strengths.slice(0, 3).forEach(strength => {
+                            summaryHtml += `<li>${strength}</li>`;
+                        });
+                        summaryHtml += `</ul>`;
+                    }
+                    summaryHtml += `</div>`;
+                }
+                
+                // Слабые стороны и рекомендации
+                if (detailedMatch?.match) {
+                    if (Array.isArray(detailedMatch.match.weaknesses) && detailedMatch.match.weaknesses.length) {
+                        summaryHtml += `<div style="margin-bottom: 16px;">`;
+                        summaryHtml += `<h4 style="color: #ef4444; margin-bottom: 8px; font-size: 16px;">❌ Слабые стороны</h4>`;
+                        summaryHtml += `<ul style="margin: 0; padding-left: 16px; font-size: 12px; opacity: 0.8;">`;
+                        detailedMatch.match.weaknesses.slice(0, 3).forEach(weakness => {
+                            summaryHtml += `<li>${weakness}</li>`;
+                        });
+                        summaryHtml += `</ul>`;
+                        summaryHtml += `</div>`;
+                    }
+                    
+                    if (Array.isArray(detailedMatch.match.recommendations) && detailedMatch.match.recommendations.length) {
+                        summaryHtml += `<div style="margin-bottom: 16px;">`;
+                        summaryHtml += `<h4 style="color: #f59e0b; margin-bottom: 8px; font-size: 16px;">💡 Рекомендации</h4>`;
+                        summaryHtml += `<ul style="margin: 0; padding-left: 16px; font-size: 12px; opacity: 0.8;">`;
+                        detailedMatch.match.recommendations.slice(0, 3).forEach(rec => {
+                            summaryHtml += `<li>${rec}</li>`;
+                        });
+                        summaryHtml += `</ul>`;
+                        summaryHtml += `</div>`;
+                    }
+                }
+                
+                summaryHtml += '</div>';
+                setBlock('results-summary', summaryHtml);
+                
+                // Формируем детальную информацию для правой колонки
+                let detailsHtml = '<div style="font-size: 14px;">';
+                
+                // Анализ резюме
+                if (resumeAnalysis?.analysis) {
+                    detailsHtml += `<div style="margin-bottom: 24px;">`;
+                    detailsHtml += `<h3 style="color: #8b5cf6; margin-bottom: 16px; font-size: 20px;">📋 Анализ резюме</h3>`;
+                    detailsHtml += `<div style="margin-bottom: 16px; padding: 16px; background: rgba(139, 92, 246, 0.1); border-radius: 8px; border-left: 4px solid #8b5cf6;">`;
+                    detailsHtml += `<div style="margin-bottom: 12px;"><b>Сводка:</b> ${resumeAnalysis.analysis.summary || 'Не указано'}</div>`;
+                    
+                    if (Array.isArray(resumeAnalysis.analysis.strengths) && resumeAnalysis.analysis.strengths.length) {
+                        detailsHtml += `<div style="margin-bottom: 8px;"><b style="color: #10b981;">✅ Сильные стороны:</b></div>`;
+                        detailsHtml += `<ul style="margin: 0; padding-left: 20px; opacity: 0.8;">`;
+                        resumeAnalysis.analysis.strengths.forEach(strength => {
+                            detailsHtml += `<li>${strength}</li>`;
+                        });
+                        detailsHtml += `</ul>`;
+                    }
+                    
+                    if (Array.isArray(resumeAnalysis.analysis.weaknesses) && resumeAnalysis.analysis.weaknesses.length) {
+                        detailsHtml += `<div style="margin-top: 12px; margin-bottom: 8px;"><b style="color: #ef4444;">❌ Области для улучшения:</b></div>`;
+                        detailsHtml += `<ul style="margin: 0; padding-left: 20px; opacity: 0.8;">`;
+                        resumeAnalysis.analysis.weaknesses.forEach(weakness => {
+                            detailsHtml += `<li>${weakness}</li>`;
+                        });
+                        detailsHtml += `</ul>`;
+                    }
+                    
+                    if (Array.isArray(resumeAnalysis.analysis.recommendations) && resumeAnalysis.analysis.recommendations.length) {
+                        detailsHtml += `<div style="margin-top: 12px; margin-bottom: 8px;"><b style="color: #f59e0b;">💡 Рекомендации:</b></div>`;
+                        detailsHtml += `<ul style="margin: 0; padding-left: 20px; opacity: 0.8;">`;
+                        resumeAnalysis.analysis.recommendations.forEach(rec => {
+                            detailsHtml += `<li>${rec}</li>`;
+                        });
+                        detailsHtml += `</ul>`;
+                    }
+                    detailsHtml += `</div>`;
+                    detailsHtml += `</div>`;
+                }
+                
+                // Детальный матчинг
+                if (detailedMatch) {
+                    detailsHtml += `<div style="margin-bottom: 24px;">`;
+                    detailsHtml += `<h3 style="color: #10b981; margin-bottom: 16px; font-size: 20px;">🎯 Детальное сопоставление</h3>`;
+                    
+                    // Построчный анализ требований
+                    if (Array.isArray(detailedMatch.detailed_analysis) && detailedMatch.detailed_analysis.length) {
+                        detailsHtml += `<div style="margin-bottom: 20px;">`;
+                        detailsHtml += `<h4 style="font-size: 16px; color: #6366f1; margin-bottom: 12px;">📊 Построчный анализ требований</h4>`;
+                        
+                        detailedMatch.detailed_analysis.forEach((item, index) => {
+                            const statusColor = item.status === 'полное соответствие' ? '#10b981' : 
+                                              item.status === 'частичное соответствие' ? '#f59e0b' : '#ef4444';
+                            const statusIcon = item.status === 'полное соответствие' ? '✅' : 
+                                             item.status === 'частичное соответствие' ? '⚠️' : '❌';
+                            
+                            detailsHtml += `<div style="margin-bottom: 16px; padding: 12px; border: 1px solid #374151; border-radius: 8px; background: rgba(255,255,255,0.02);">`;
+                            detailsHtml += `<div style="margin-bottom: 8px;"><b>${index + 1}. ${item.requirement}</b></div>`;
+                            detailsHtml += `<div style="margin-bottom: 6px; opacity: 0.8;"><b>Доказательства:</b> ${item.evidence || 'Не найдено'}</div>`;
+                            detailsHtml += `<div style="margin-bottom: 6px; color: ${statusColor};">${statusIcon} <b>Статус:</b> ${item.status} (${item.score}%)</div>`;
+                            if (item.comment) {
+                                detailsHtml += `<div style="opacity: 0.8; font-style: italic;">💬 ${item.comment}</div>`;
+                            }
+                            detailsHtml += `</div>`;
+                        });
+                        
+                        detailsHtml += `</div>`;
+                    }
+                    detailsHtml += `</div>`;
+                }
+                
+                // Сопроводительное письмо
+                if (coverLetter && (coverLetter.coverLetter || coverLetter.letter || coverLetter.cover_letter)) {
+                    detailsHtml += `<div style="margin-bottom: 24px;">`;
+                    detailsHtml += `<h3 style="color: #10b981; margin-bottom: 16px; font-size: 20px;">📝 Сопроводительное письмо</h3>`;
+                    detailsHtml += `<div style="padding: 16px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 4px solid #10b981;">`;
+                    detailsHtml += `<div style="white-space: pre-wrap; line-height: 1.6;">${coverLetter.coverLetter || coverLetter.letter || coverLetter.cover_letter}</div>`;
+                    detailsHtml += `</div>`;
+                    detailsHtml += `</div>`;
+                }
+                
+                detailsHtml += '</div>';
+                setBlock('results-details', detailsHtml);
+                
+                if (btn) { btn.disabled = false; btn.textContent = prev; }
+            } catch (e) { 
+                setBlock('results-details','Ошибка анализа: ' + e.message); 
+                const btn = document.querySelector('[onclick="runPremiumFromPanel()"]');
+                if (btn) { btn.disabled = false; btn.textContent = 'Запустить всё сразу'; }
+            }
         }
         
         // Функция создания окна ответов на вопросы
@@ -2017,6 +2691,96 @@
         }
 
         // Legacy functions removed - no longer needed
+
+        // Умная автоподгонка высоты текстовых полей с всегда одинаковой высотой
+        function initializeSmartTextareas() {
+            // Пары полей для синхронизации высоты
+            const textareaPairs = [
+                ['compare-resume', 'compare-job'],
+                ['cover-resume', 'cover-job'], 
+                ['premium-resume', 'premium-job']
+            ];
+            
+            // Одиночные поля
+            const singleTextareas = ['review-resume'];
+            const CAP_VH = 85; // максимальная высота = 85% окна
+
+            function autosize(el) {
+                if (!el) return;
+                el.style.height = 'auto';
+                el.style.overflowY = 'hidden';
+                el.style.height = (el.scrollHeight + 2) + 'px';
+            }
+
+            function fitPair(ids, alwaysEqual = true) {
+                const els = ids.map(id => document.getElementById(id)).filter(Boolean);
+                if (els.length === 0) return;
+
+                // 1) каждый под свой контент
+                els.forEach(autosize);
+
+                // 2) выравниваем ВСЕГДА (и на мобиле тоже)
+                if (alwaysEqual && els.length === 2) {
+                    const capPx = Math.round(window.innerHeight * (CAP_VH/100));
+                    const target = Math.min(
+                        Math.max(els[0].scrollHeight, els[1].scrollHeight), // самая большая
+                        capPx                                              // но не выше лимита
+                    );
+                    els.forEach(el => {
+                        el.style.height = target + 'px';
+                        // если контента больше, чем влезло — разрешим внутренний скролл
+                        el.style.overflowY = (el.scrollHeight > target) ? 'auto' : 'hidden';
+                    });
+                }
+            }
+
+            function fitSingle(id) {
+                const el = document.getElementById(id);
+                if (el) autosize(el);
+            }
+
+            function bind() {
+                // Навешиваем события на пары полей
+                textareaPairs.forEach(pair => {
+                    pair.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (!el) return;
+                        ['input','change','cut','paste'].forEach(ev => {
+                            el.addEventListener(ev, () => requestAnimationFrame(() => fitPair(pair, true)));
+                        });
+                    });
+                });
+
+                // Навешиваем события на одиночные поля
+                singleTextareas.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    ['input','change','cut','paste'].forEach(ev => {
+                        el.addEventListener(ev, () => requestAnimationFrame(() => fitSingle(id)));
+                    });
+                });
+            }
+
+            // Пересчёт при ресайзе (изменится перенос строк)
+            window.addEventListener('resize', () => {
+                clearTimeout(window.__fitTextareasT);
+                window.__fitTextareasT = setTimeout(() => {
+                    textareaPairs.forEach(pair => fitPair(pair, true));
+                    singleTextareas.forEach(fitSingle);
+                }, 80);
+            });
+
+            // Глобальная функция для пересчёта после загрузки файлов
+            window.fitTextareasNow = () => {
+                textareaPairs.forEach(pair => fitPair(pair, true));
+                singleTextareas.forEach(fitSingle);
+            };
+
+            // Инициализация
+            bind();
+            textareaPairs.forEach(pair => fitPair(pair, true));
+            singleTextareas.forEach(fitSingle);
+        }
     </script>
 </body>
 </html>
